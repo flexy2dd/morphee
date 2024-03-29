@@ -1,0 +1,15 @@
+[Unit]
+Description=Storm Cloud mananger
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/storm-cloud/storm-cloud-manager.py
+WorkingDirectory=/opt/storm-cloud
+StandardOutput=syslog
+StandardError=syslog
+Restart=always
+User=root
+PIDFile=/tmp/storm-cloud-manager.pid
+
+[Install]
+WantedBy=multi-user.target
