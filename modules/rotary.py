@@ -23,9 +23,9 @@ class rotary():
     self.pinDT = constant.GPIO_ROTARY_DT
     self.pinSW = constant.GPIO_ROTARY_SW
 
-    GPIO.setmode(GPIO.BCM)
+    #GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
-    
+
     # Rotation
     GPIO.setup(self.pinCLK, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.add_event_detect(self.pinCLK, GPIO.BOTH, callback=self.rotaryCall)
@@ -53,6 +53,11 @@ class rotary():
 
   def triggerEnable(self):
     self.trigger = True
+
+  def triggerRotateClockwise(self):
+    if not self.rotateCallback is None and self.trigger:
+      pprint('rotate Clockwise')
+      self.triggerRotate('left')
 
   def triggerRotate(self, status):
     if not self.rotateCallback is None and self.trigger:
@@ -110,11 +115,3 @@ class rotary():
 
   def setRotateCallback(self, rotate_callback):
     self.rotateCallback = rotate_callback
-
-#  # it does not work as expected fix me
-#  def __del__(self):
-#    GPIO.cleanup()
-        
-#  #workaround to close gpio in a proper way, function shall be called at exit 
-#  def Exit(self):
-#    GPIO.cleanup()

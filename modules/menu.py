@@ -2,11 +2,11 @@ import RPi.GPIO as GPIO
 import time
 import math
 import os
-#import pygame
+
 from PIL import ImageFont, ImageDraw, Image
 from modules import constant
 from modules import network
-from modules import ambiance
+from modules import core
 from pprint import pprint
 
 class menu():
@@ -221,8 +221,8 @@ class menu():
     screen.cls()
     screen.setText(0, 10, "Pluie", 1)
 
-    oAmbiance = ambiance.ambiance()
-    iRain = oAmbiance.getRain()
+    oCore = core.core()
+    iRain = oCore.getRain()
 
     left = 40
     top = 22
@@ -246,7 +246,7 @@ class menu():
 
       if self.swithRelease==1:
         self.swithRelease = 0
-        oAmbiance.setRain(self.genericPos)
+        oCore.setRain(self.genericPos)
         break
 
       time.sleep(0.10)
@@ -255,8 +255,8 @@ class menu():
     screen.cls()
     screen.setText(0, 10, "Tonnerre", 1)
 
-    oAmbiance = ambiance.ambiance()
-    iThunder = oAmbiance.getThunder()
+    oCore = core.core()
+    iThunder = oCore.getThunder()
 
     left = 40
     top = 22
@@ -280,7 +280,7 @@ class menu():
 
       if self.swithRelease==1:
         self.swithRelease = 0
-        oAmbiance.setThunder(self.genericPos)
+        oCore.setThunder(self.genericPos)
         break
 
       time.sleep(0.10)
@@ -290,8 +290,8 @@ class menu():
     screen.setText(0, 10, "Eclairs", 1)
     screen.display()
 
-    oAmbiance = ambiance.ambiance()
-    iLight = oAmbiance.getLight()
+    oCore = core.core()
+    iLight = oCore.getLight()
 
     left = 40
     top = 22
@@ -315,7 +315,7 @@ class menu():
 
       if self.swithRelease==1:
         self.swithRelease = 0
-        oAmbiance.setLight(self.genericPos)
+        oCore.setLight(self.genericPos)
         break
 
       time.sleep(0.10)
@@ -324,14 +324,15 @@ class menu():
     screen.cls()
     screen.setText(0, 10, "Volume", 1)
 
-    oAmbiance = ambiance.ambiance()
-    iVolume = oAmbiance.getVolume()
+    oCore = core.core()
+    iVolume = oCore.getVolume()
 
     volume = ((iVolume * 100.0) / 100) / 100    
-    pygame.mixer.init();
-    oTestSound = pygame.mixer.Sound('%s/../sounds/volume.wav' % os.path.dirname(__file__))
-    oTestSound.set_volume(volume)
-    oTestSound.play(1)
+
+#    pygame.mixer.init();
+#    oTestSound = pygame.mixer.Sound('%s/../sounds/volume.wav' % os.path.dirname(__file__))
+#    oTestSound.set_volume(volume)
+#    oTestSound.play(1)
 
     left = 0
     top = 22
@@ -359,23 +360,23 @@ class menu():
       if self.swithRelease==1:
         self.swithRelease = 0
         oTestSound.stop()
-        oAmbiance.setVolume(self.genericPos)
+        oCore.setVolume(self.genericPos)
         break
 
       time.sleep(0.10)
 
   def setStop(self, screen):
     screen.cls()
-    oAmbiance = ambiance.ambiance()
-    oAmbiance.stop()
+    oCore = core.core()
+    oCore.stop()
     time.sleep(0.10)
 
   def setSnooze(self, screen):
     screen.cls()
     screen.setText(0, 10, "Temps", 1)
 
-    oAmbiance = ambiance.ambiance()
-    iSnooze = oAmbiance.getSnooze()
+    oCore = core.core()
+    iSnooze = oCore.getSnooze()
 
     left = 0
     top = 22
@@ -401,8 +402,8 @@ class menu():
 
       if self.swithRelease==1:
         self.swithRelease = 0
-        oAmbiance.setSnooze(self.genericPos)
-        oAmbiance.start()
+        oCore.setSnooze(self.genericPos)
+        oCore.start()
         break
 
       time.sleep(0.10)

@@ -1,15 +1,15 @@
 [Unit]
-Description=Morphee mananger
+Description=Morphee server mananger
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/python3 /opt/morphee/morphee-manager.py
+ExecStart=/usr/bin/python3 /opt/morphee/morphee-server.py
 WorkingDirectory=/opt/morphee
 StandardOutput=syslog
 StandardError=syslog
 Restart=always
 User=root
-PIDFile=/tmp/morphee-manager.pid
+PIDFile=/tmp/morphee-server.pid
 
 [Install]
 WantedBy=multi-user.target

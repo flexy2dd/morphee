@@ -1,0 +1,47 @@
+apt-get install git
+
+#cd /opt/
+
+#git clone https://github.com/adafruit/Adafruit-Raspberry-Pi-Python-Code.git
+#git clone https://github.com/adafruit/Adafruit_Python_SSD1306.git
+#git clone https://github.com/BLavery/lib_oled96
+#pip3 install adafruit-circuitpython-ssd1306
+#apt-get install nodejs npm 
+#apt-get install libavcodec-extra-56 libav-tools alsa-utils pulseaudio mpg123
+
+apt-get install git build-essential python3-pip python3-pygame python3-dev python3-rpi.gpio python3-pil python-smbuspython-pycurl  python-dateutil i2c-tools libjpeg-dev zlib1g-dev libfreetype6-dev liblcms2-dev libopenjp2-7 libtiff5 libasound2-dev
+pip3 install luma.oled configparser python-dateutil simpleaudio python-socketio aiohttp aiodns rpi_ws281x
+
+cp storm-cloud-manager.service /etc/systemd/system/storm-cloud-manager.service
+cp storm-cloud-server.service /etc/systemd/system/storm-cloud-server.service
+cp storm-cloud-player.service /etc/systemd/system/storm-cloud-player.service
+
+alias rbash='source ~/.bashrc'
+alias relaod-bash='source ~/.bashrc'
+
+alias sc='cd /opt/storm-cloud'
+alias p='sc'
+
+alias manager-start='systemctl start storm-cloud-manager.service'
+alias manager-stop='systemctl stop storm-cloud-manager.service'
+alias manager-status='systemctl status storm-cloud-manager.service'
+alias manager-restart='manager-stop && manager-start'
+alias manager-logs='journalctl -f -u storm-cloud-manager'
+alias manager-enable='systemctl enable storm-cloud-manager.service'
+alias manager-disable='systemctl disable storm-cloud-manager.service'
+
+alias server-start='systemctl start storm-cloud-server.service'
+alias server-stop='systemctl stop storm-cloud-server.service'
+alias server-status='systemctl status storm-cloud-server.service'
+alias server-restart='server-stop && server-start'
+alias server-logs='journalctl -f -u storm-cloud-server'
+alias server-enable='systemctl enable storm-cloud-server.service'
+alias server-disable='systemctl disable storm-cloud-server.service'
+
+alias player-start='systemctl start storm-cloud-player.service'
+alias player-stop='systemctl stop storm-cloud-player.service'
+alias player-status='systemctl status storm-cloud-player.service'
+alias player-restart='player-stop && player-start'
+alias player-logs='journalctl -f -u storm-cloud-player'
+alias player-enable='systemctl enable storm-cloud-player.service'
+alias player-disable='systemctl disable storm-cloud-player.service'

@@ -148,7 +148,7 @@ echo "trusted source."
 newline
 echo "If you want to see what this script does before"
 echo "running it, you should run:"
-echo "    \curl -sS github.com/flexy2dd/storm-cloudadafruit/$scriptname"
+echo "    \curl -sS github.com/flexy2dd/morphee/$scriptname"
 newline
 
 if confirm "Do you wish to continue?"; then
@@ -157,11 +157,11 @@ if confirm "Do you wish to continue?"; then
     if confirm "You wish update dependencies? [RECOMMENDED]"; then
         newline
         echo "Add some dependencies..."
-        apt-get install git build-essential python3-pip python3-pygame python3-dev python3-rpi.gpio python3-pil i2c-tools libjpeg-dev zlib1g-dev libfreetype6-dev liblcms2-dev libopenjp2-7 libtiff5
+        apt-get install git build-essential python3-pip python3-pygame python3-dev python3-rpi.gpio python3-pil i2c-tools libjpeg-dev zlib1g-dev libfreetype6-dev liblcms2-dev libopenjp2-7 libtiff5 mosquitto libasound2-dev
 
         newline
         echo "Add python dependencies..."
-        pip3 install luma.oled configparser python-dateutil simpleaudio python-socketio aiohttp aiodns rpi_ws281x
+        pip3 install luma.oled configparser python-dateutil simpleaudio python-socketio aiohttp aiodns rpi_ws281x adafruit-circuitpython-neopixel paho-mqtt elevenlabs Mopidy-ALSAMixer yt-dlp
     fi
 
     newline
@@ -169,32 +169,39 @@ if confirm "Do you wish to continue?"; then
 
         newline
         echo "Installing service..."
-        newline
-        echo "storm-cloud-manager"
-        cp storm-cloud-manager.service /etc/systemd/system/storm-cloud-manager.service
-        sudo systemctl daemon-reload
-        systemctl disable storm-cloud-manager.service
         
         newline
-        echo "storm-cloud-server"
-        cp storm-cloud-server.service /etc/systemd/system/storm-cloud-server.service
+        echo "mosquitto"
         sudo systemctl daemon-reload
-        systemctl disable storm-cloud-server.service
+        systemctl enable mosquitto.service
+        systemctl start mosquitto.service
+
+        newline
+        echo "morphee-manager"
+        ln -s $PWD/morphee-manager.service /etc/systemd/system/morphee-manager.service
+        sudo systemctl daemon-reload
+        systemctl disable morphee-manager.service
         
         newline
-        echo "storm-cloud-player"
-        cp storm-cloud-player.service /etc/systemd/system/storm-cloud-player.service
+        echo "morphee-server"
+        ln -s $PWD/morphee-server.service /etc/systemd/system/morphee-server.service
         sudo systemctl daemon-reload
-        systemctl disable storm-cloud-player.service
+        systemctl disable morphee-server.service
+        
+        newline
+        echo "morphee-lights"
+        ln -s $PWD/morphee-lights.service /etc/systemd/system/morphee-lights.service
+        sudo systemctl daemon-reload
+        systemctl disable morphee-lights.service
         
         newline
         echo "You can optionally activate all service in the background at boot."
         newline
         if confirm "Activate service in background? [RECOMMENDED]"; then
 	          newline
-	          systemctl enable storm-cloud-manager.service
-	          systemctl enable storm-cloud-server.service
-	          systemctl enable storm-cloud-player.service
+	          systemctl enable morphee-manager.service
+	          systemctl enable morphee-server.service
+	          systemctl enable morphee-lights.service
 	          ASK_TO_REBOOT=False
         fi
 

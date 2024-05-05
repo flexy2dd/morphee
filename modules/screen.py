@@ -13,7 +13,7 @@ from luma.oled.device import sh1106
 from PIL import ImageFont, ImageDraw, Image
 
 from modules import constant
-from modules import ambiance
+from modules import core
 
 # ===========================================================================
 # screen Class
@@ -23,7 +23,7 @@ class screen():
   
   def __init__(self):
     i2cbus = i2c()
-    self.device = sh1106(i2cbus)
+    self.device = sh1106(i2cbus, rotate=2)
     self.device.show()
     
     self.image = Image.new(self.device.mode, self.device.size)
@@ -77,10 +77,50 @@ class screen():
 
     self.display()
     
+  def countdown(self, step):
+    self.draw.rectangle(self.device.bounding_box, outline="black", fill="black")
+    font = ImageFont.truetype('%s/../fonts/digital-7mono.ttf' % os.path.dirname(__file__), 55)
+    self.draw.text((40, 5), '{: >3}'.format(step) , font=font, fill=1)
+
+    font = ImageFont.truetype('%s/../fonts/fontawesome-webfont.ttf' % os.path.dirname(__file__), 30)
+    text = chr(constant.FONT_AWESOME_ICONS["fa-save"])
+    self.draw.text((0, 12), text, font=font, fill=1)
+    self.display()
+    time.sleep(0.5)
+
+  def picto(self, picto):
+
+    self.draw.rectangle(self.device.bounding_box, outline="black", fill="black")
+    font = ImageFont.truetype('%s/../fonts/fontawesome-webfont.ttf' % os.path.dirname(__file__), 50)
+    text = chr(constant.FONT_AWESOME_ICONS["fa-" + picto])
+
+    fontleft, fonttop, fontright, fontbottom = font.getbbox(text)
+    boxleft, boxtop, boxright, boxbottom = self.device.bounding_box
+    top = int((boxbottom - fontbottom) / 2)
+    left = int((boxright - fontright) / 2)
+
+    self.draw.text((left, top), text, font=font, fill=1)
+    self.display()
+
+  def clock(self):
+    now = datetime.datetime.now()
+    hour = now.hour
+    minute = now.minute
+    second = now.second             
+    
+    font = ImageFont.truetype('%s/../fonts/digital-7mono.ttf' % os.path.dirname(__file__), 55)
+    
+    self.draw.text((0, 0), now.strftime('%H') , font=font, fill=1)
+    self.draw.text((65, 0), now.strftime('%M') , font=font, fill=1)
+    
+    if ((now.second % 2) == 0): # Toggle colon at 1Hz
+      self.draw.text((46, 0), now.strftime(':') , font=font, fill=1)
+
   def remainingTime(self):
 
-    oAmbiance = ambiance.ambiance()
-    remainingtime = oAmbiance.getRemainingTime()
+    #oCore = core.core()
+    #remainingtime = oCore.getRemainingTime()
+    remainingtime = '2024-04-30 21:00:00'
     remainingtime = datetime.datetime.strptime(remainingtime, '%Y-%m-%d %H:%M:%S')
     
     nowTime = datetime.datetime.now().replace(microsecond=0) 
