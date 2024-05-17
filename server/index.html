@@ -258,10 +258,10 @@
       if (topic=='Morphee/carte/readed') {
         const payload = JSON.parse(message.toString());
         if (payload.readed) {
-          document.getElementById('modipy-url').parentNode.MaterialTextfield.change(payload.url);
-          document.getElementById('mode-' + payload.mode).parentNode.MaterialRadio.check();
-          document.getElementById('style-' + payload.style).parentNode.MaterialRadio.check();
-          document.getElementById('animation-' + payload.style).parentNode.MaterialRadio.check();
+          $('#modipy-url').val(payload.url);
+          $('#btn-mode').val(payload.mode);
+          $('#btn-style').val(payload.style);
+          $('#btn-animation').val(payload.animation);
         }
       } else if (topic=='Morphee/carte/encoded') {
         const payload = JSON.parse(message.toString());
@@ -270,8 +270,8 @@
         } else {
           swal("La carte n'est encodée", "L'encodage de la carte a échouée", "warning")
         }
-        $("#btn-encode-card").show();
-        $('#progress-encode').hide();
+        $("#btn-encode-card").removeClass('disabled visually-hidden');
+        $("#btn-encode-spin").addClass('visually-hidden');
       }
       console.log(message.toString())
     })
@@ -345,7 +345,7 @@
       socket.on("encode_ack", (data) => {
         if (data.ack) {
             $("#btn-encode-card").addClass('disabled visually-hidden');
-            $("#btn-encode-spin").removeClass('invisible');
+            $("#btn-encode-spin").removeClass('visually-hidden');
         } else {
             swal(data.title, data.message, "warning")
             $("#btn-encode-card").removeClass('disabled visually-hidden');
