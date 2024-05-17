@@ -11,6 +11,8 @@ import datetime
 import board
 import neopixel
 import logging
+import numpy as np
+from scipy.ndimage.filters import gaussian_filter1d
 import json
 import paho.mqtt.client as mqtt
 import threading
@@ -18,6 +20,7 @@ from pathlib import Path
 
 from modules import core
 from modules import constant
+from modules import microphone
 
 from adafruit_led_animation.animation.volume            import Volume
 from adafruit_led_animation.animation.sparklepulse      import SparklePulse
@@ -67,6 +70,48 @@ animationParams = []
 animationTime = 86400
 animationBrightness = 50
 exit = False
+
+# ===========================================================================
+# visualise
+# ===========================================================================
+def microphone_update(audio_samples):
+    global y_roll, prev_rms, prev_exp, prev_fps_update
+    # Normalize samples between 0 and 1
+    y = audio_samples / 2.0**15
+    # Construct a rolling window of audio samples
+    #y_roll[:-1] = y_roll[1:]
+    #y_roll[-1, :] = np.copy(y)
+    #y_data = np.concatenate(y_roll, axis=0).astype(np.float32)
+    
+    #vol = np.max(np.abs(y_data))
+    #if vol < constant.MIN_VOLUME_THRESHOLD:
+    #    print('No audio input. Volume below threshold. Volume:', vol)
+    #    reactive_pixels = np.tile(0, (3, constant.NUM_PIXELS))
+    #    updateReactive(reactive_pixels)
+    #else:
+    #    # Transform audio input into the frequency domain
+    #    N = len(y_data)
+    #    N_zeros = 2**int(np.ceil(np.log2(N))) - N
+    #    # Pad with zeros until the next power of two
+    #    y_data *= fft_window
+    #    y_padded = np.pad(y_data, (0, N_zeros), mode='constant')
+    #    YS = np.abs(np.fft.rfft(y_padded)[:N // 2])
+    #    # Construct a Mel filterbank from the FFT data
+    #    mel = np.atleast_2d(YS).T * dsp.mel_y.T
+    #    # Scale data to values more suitable for visualization
+    #    # mel = np.sum(mel, axis=0)
+    #    mel = np.sum(mel, axis=0)
+    #    mel = mel**2.0
+    #    # Gain normalization
+    #    mel_gain.update(np.max(gaussian_filter1d(mel, sigma=1.0)))
+    #    mel /= mel_gain.value
+    #    mel = mel_smoothing.update(mel)
+    #
+    #    # Map filterbank output onto LED strip
+    #    output = reactive_energy(mel)
+    #
+    #    reactive_pixels = output
+    #    updateReactive(reactive_pixels)
 
 # ===========================================================================
 # mqtt config
@@ -160,6 +205,12 @@ def on_message(client, userdata, msg):
     time.sleep(1)
 
 def colorToTuple(color):
+  if type(color) is list:
+    colors = []
+    for colorStr in color:
+      colors.append(colorToTuple(colorStr))
+    return colors
+
   if color == "WHITE":
     return WHITE
   elif color == "RED":
@@ -250,343 +301,356 @@ if __name__ == "__main__":
       if newAnimation:
         logging.info("New animation " + animation + " detected")
 
-      if animation == 'none':
+      try:
 
-        pixels.fill((0, 0, 0))
-        pixels.show()
-
-      elif animation == 'chase':
-        """
-        Chase pixels in one direction in a single color, like a theater marquee sign.
-
-        :param pixel_object: The initialised LED object.
-        :param float speed: Animation speed rate in seconds, e.g. ``0.1``.
-        :param color: Animation color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
-        :param size: Number of pixels to turn on in a row.
-        :param spacing: Number of pixels to turn off in a row.
-        :param reverse: Reverse direction of movement.
-        """
-        if newAnimation:
-          logging.info("Init Chase: " + animation)
-          oAnim = Chase(pixels,
-                        speed=animationParams['speed'],
-                        color=colorToTuple(animationParams['color']),
-                        size=animationParams['size'],
-                        spacing=animationParams['spacing'],
-                        reverse=animationParams['reverse'])
-
-      elif animation == 'volume':
-        """
-        Animate the brightness and number of pixels based on volume.
-        :param pixel_object: The initialised LED object.
-        :param float speed: Animation update speed in seconds, e.g. ``0.1``.
-        :param brightest_color: Color at max volume ``(r, g, b)`` tuple, or ``0x000000`` hex format
-        :param decoder: a MP3Decoder object that the volume will be taken from
-        :param float max_volume: what volume is considered maximum where everything is lit up
-        """
-        if newAnimation:
-          logging.info("Init Volume: " + animation)
-          oAnim = Volume(pixels,
-                         speed=animationParams['speed'],
-                         color=colorToTuple(animationParams['color']),
-                         brightest_color=colorToTuple(animationParams['brightest_color']),
-                         max_volume=animationParams['max_volume'])
-
-      elif animation == 'sparklepulse':
-        """
-        Combination of the Sparkle and Pulse animations.
-
-        :param pixel_object: The initialised LED object.
-        :param int speed: Animation refresh rate in seconds, e.g. ``0.1``.
-        :param color: Animation color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
-        :param period: Period to pulse the LEDs over.  Default 5.
-        :param breath: Duration to hold minimum and maximum intensity. Default 0.
-        :param max_intensity: The maximum intensity to pulse, between 0 and 1.0.  Default 1.
-        :param min_intensity: The minimum intensity to pulse, between 0 and 1.0.  Default 0.
-        """
-        if newAnimation:
-          logging.info("Init SparklePulse: " + animation)
-          oAnim = SparklePulse(pixels,
-                               speed=animationParams['speed'],
-                               color=colorToTuple(animationParams['color']),
-                               period=animationParams['period'],
-                               breath=animationParams['breath'],
-                               max_intensity=animationParams['max_intensity'],
-                               min_intensity=animationParams['min_intensity'])
-
-      elif animation == 'sparkle':
-        """
-        Sparkle animation of a single color.
-
-        :param pixel_object: The initialised LED object.
-        :param float speed: Animation speed in seconds, e.g. ``0.1``.
-        :param color: Animation color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
-        :param num_sparkles: Number of sparkles to generate per animation cycle.
-        :param mask: array to limit sparkles within range of the mask
-        """
-        if newAnimation:
-          logging.info("Init Sparkle: " + animation)
-          oAnim = Sparkle(pixels,
+        if animation == 'none':
+        
+          pixels.fill((0, 0, 0))
+          pixels.show()
+        
+        elif animation == 'chase':
+          """
+          Chase pixels in one direction in a single color, like a theater marquee sign.
+        
+          :param pixel_object: The initialised LED object.
+          :param float speed: Animation speed rate in seconds, e.g. ``0.1``.
+          :param color: Animation color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
+          :param size: Number of pixels to turn on in a row.
+          :param spacing: Number of pixels to turn off in a row.
+          :param reverse: Reverse direction of movement.
+          """
+          if newAnimation:
+            logging.info("Init Chase: " + animation)
+            oAnim = Chase(pixels,
                           speed=animationParams['speed'],
-                          num_sparkles=animationParams['num_sparkles'],
-                          mask=animationParams['mask'],
-                          color=colorToTuple(animationParams['color']))
-
-      elif animation == 'rainbowsparkle':
-        """Rainbow sparkle animation.
-
-        :param pixel_object: The initialised LED object.
-        :param float speed: Animation refresh rate in seconds, e.g. ``0.1``.
-        :param float period: Period to cycle the rainbow over in seconds.  Default 5.
-        :param int num_sparkles: The number of sparkles to display. Defaults to 1/20 of the pixel
-                                 object length.
-        :param float step: Color wheel step.  Default 1.
-        :param str name: Name of animation (optional, useful for sequences and debugging).
-        :param float background_brightness: The brightness of the background rainbow. Defaults to
-                                            ``0.2`` or 20 percent.
-        :param bool precompute_rainbow: Whether to precompute the rainbow.  Uses more memory.
-                                        (default True).
-        """
-        if newAnimation:
-          logging.info("Init RainbowSparkle: " + animation)
-          oAnim = RainbowSparkle(pixels,
+                          color=colorToTuple(animationParams['color']),
+                          size=animationParams['size'],
+                          spacing=animationParams['spacing'],
+                          reverse=animationParams['reverse'])
+        
+        elif animation == 'volume':
+          """
+          Animate the brightness and number of pixels based on volume.
+          :param pixel_object: The initialised LED object.
+          :param float speed: Animation update speed in seconds, e.g. ``0.1``.
+          :param brightest_color: Color at max volume ``(r, g, b)`` tuple, or ``0x000000`` hex format
+          :param decoder: a MP3Decoder object that the volume will be taken from
+          :param float max_volume: what volume is considered maximum where everything is lit up
+          """
+          if newAnimation:
+            logging.info("Init Volume: " + animation)
+        
+            oAnim = Volume(pixels,
+                           speed=animationParams['speed'],
+                           color=colorToTuple(animationParams['color']),
+                           brightest_color=colorToTuple(animationParams['brightest_color']),
+                           max_volume=animationParams['max_volume'])
+        
+        elif animation == 'sparklepulse':
+          """
+          Combination of the Sparkle and Pulse animations.
+        
+          :param pixel_object: The initialised LED object.
+          :param int speed: Animation refresh rate in seconds, e.g. ``0.1``.
+          :param color: Animation color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
+          :param period: Period to pulse the LEDs over.  Default 5.
+          :param breath: Duration to hold minimum and maximum intensity. Default 0.
+          :param max_intensity: The maximum intensity to pulse, between 0 and 1.0.  Default 1.
+          :param min_intensity: The minimum intensity to pulse, between 0 and 1.0.  Default 0.
+          """
+          if newAnimation:
+            logging.info("Init SparklePulse: " + animation)
+            oAnim = SparklePulse(pixels,
                                  speed=animationParams['speed'],
+                                 color=colorToTuple(animationParams['color']),
                                  period=animationParams['period'],
-                                 num_sparkles=animationParams['num_sparkles'],
-                                 step=animationParams['step'],
-                                 name=animationParams['name'],
-                                 background_brightness=animationParams['background_brightness'],
-                                 precompute_rainbow=animationParams['precompute_rainbow'])
-
-      elif animation == 'solid':
-        """
-        A solid color.
-
-        :param pixel_object: The initialised LED object.
-        :param color: Animation color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
-        """
-        if newAnimation:
-          logging.info("Init Solid: " + animation)
-          oAnim = Solid(pixels,
-                        color=colorToTuple(animationParams['color']))
-
-      elif animation == 'comet':
-        """
-        A comet animation.
-
-        :param pixel_object: The initialised LED object.
-        :param float speed: Animation speed in seconds, e.g. ``0.1``.
-        :param color: Animation color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
-        :param background_color: Background color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
-                                 Defaults to BLACK.
-        :param int tail_length: The length of the comet. Defaults to 25% of the length of the
-                                ``pixel_object``. Automatically compensates for a minimum of 2 and a
-                                maximum of the length of the ``pixel_object``.
-        :param bool reverse: Animates the comet in the reverse order. Defaults to ``False``.
-        :param bool bounce: Comet will bounce back and forth. Defaults to ``False``.
-        :param Optional[string] name: A human-readable name for the Animation.
-                                      Used by the to string function.
-        :param bool ring: Ring mode.  Defaults to ``False``.
-        """
-        if newAnimation:
-          logging.info("Init Comet: " + animation)
-          oAnim = Comet(pixels,
-                        speed=animationParams['speed'],
-                        background_color=animationParams['background_color'],
-                        tail_length=animationParams['tail_length'],
-                        reverse=animationParams['reverse'],
-                        bounce=animationParams['bounce'],
-                        color=colorToTuple(animationParams['color']))
-
-      elif animation == 'colorcycle':
-        """
-        Animate a sequence of one or more colors, cycling at the specified speed.
-
-        :param pixel_object: The initialised LED object.
-        :param float speed: Animation speed in seconds, e.g. ``0.1``.
-        :param colors: A list of colors to cycle through in ``(r, g, b)`` tuple, or ``0x000000`` hex
-                       format. Defaults to a rainbow color cycle.
-        :param start_color: An index (from 0) for which color to start from. Default 0 (first color).
-        """
-        if newAnimation:
-          logging.info("Init ColorCycle: " + animation)
-          oAnim = ColorCycle(pixels,
-                             speed=animationParams['speed'],
-                             start_color=animationParams['start_color'],
-                             colors=[colorToTuple(animationParams['color'])])
-
-      elif animation == 'blink':
-        """
-        Blink a color on and off.
-
-        :param pixel_object: The initialised LED object.
-        :param float speed: Animation speed in seconds, e.g. ``0.1``.
-        :param color: Animation color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
-        """
-        if newAnimation:
-          logging.info("Init Blink: " + animation)
-          oAnim = Blink(pixels,
-                        speed=animationParams['speed'],
-                        color=colorToTuple(animationParams['color']))
-
-      elif animation == 'customcolorchase':
-        """
-        Chase pixels in one direction, like a theater marquee with Custom Colors
-
-        :param pixel_object: The initialised LED object.
-        :param float speed: Animation speed rate in seconds, e.g. ``0.1``.
-        :param colors: Animation colors in list of `(r, g, b)`` tuple, or ``0x000000`` hex format
-        :param size: Number of pixels to turn on in a row.
-        :param spacing: Number of pixels to turn off in a row.
-        :param reverse: Reverse direction of movement.
-        """
-        if newAnimation:
-          logging.info("Init CustomColorChase: " + animation)
-          oAnim = CustomColorChase(pixels,
+                                 breath=animationParams['breath'],
+                                 max_intensity=animationParams['max_intensity'],
+                                 min_intensity=animationParams['min_intensity'])
+        
+        elif animation == 'sparkle':
+          """
+          Sparkle animation of a single color.
+        
+          :param pixel_object: The initialised LED object.
+          :param float speed: Animation speed in seconds, e.g. ``0.1``.
+          :param color: Animation color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
+          :param num_sparkles: Number of sparkles to generate per animation cycle.
+          :param mask: array to limit sparkles within range of the mask
+          """
+          if newAnimation:
+            logging.info("Init Sparkle: " + animation)
+            oAnim = Sparkle(pixels,
+                            speed=animationParams['speed'],
+                            num_sparkles=animationParams['num_sparkles'],
+                            color=colorToTuple(animationParams['color']))
+        
+        elif animation == 'rainbowsparkle':
+          """Rainbow sparkle animation.
+        
+          :param pixel_object: The initialised LED object.
+          :param float speed: Animation refresh rate in seconds, e.g. ``0.1``.
+          :param float period: Period to cycle the rainbow over in seconds.  Default 5.
+          :param int num_sparkles: The number of sparkles to display. Defaults to 1/20 of the pixel
+                                   object length.
+          :param float step: Color wheel step.  Default 1.
+          :param str name: Name of animation (optional, useful for sequences and debugging).
+          :param float background_brightness: The brightness of the background rainbow. Defaults to
+                                              ``0.2`` or 20 percent.
+          :param bool precompute_rainbow: Whether to precompute the rainbow.  Uses more memory.
+                                          (default True).
+          """
+          if newAnimation:
+            logging.info("Init RainbowSparkle: " + animation)
+            oAnim = RainbowSparkle(pixels,
                                    speed=animationParams['speed'],
-                                   size=animationParams['size'],
-                                   reverse=animationParams['reverse'],
-                                   spacing=animationParams['spacing'],
-                                   colosrs=[colorToTuple(animationParams['color'])])
+                                   period=animationParams['period'],
+                                   num_sparkles=animationParams['num_sparkles'],
+                                   step=animationParams['step'],
+                                   name=animationParams['name'],
+                                   background_brightness=animationParams['background_brightness'],
+                                   precompute_rainbow=animationParams['precompute_rainbow'])
+        
+        elif animation == 'solid':
+          """
+          A solid color.
+        
+          :param pixel_object: The initialised LED object.
+          :param color: Animation color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
+          """
+          if newAnimation:
+            logging.info("Init Solid: " + animation)
+            oAnim = Solid(pixels,
+                          color=colorToTuple(animationParams['color']))
+        
+        elif animation == 'comet':
+          """
+          A comet animation.
+        
+          :param pixel_object: The initialised LED object.
+          :param float speed: Animation speed in seconds, e.g. ``0.1``.
+          :param color: Animation color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
+          :param background_color: Background color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
+                                   Defaults to BLACK.
+          :param int tail_length: The length of the comet. Defaults to 25% of the length of the
+                                  ``pixel_object``. Automatically compensates for a minimum of 2 and a
+                                  maximum of the length of the ``pixel_object``.
+          :param bool reverse: Animates the comet in the reverse order. Defaults to ``False``.
+          :param bool bounce: Comet will bounce back and forth. Defaults to ``False``.
+          :param Optional[string] name: A human-readable name for the Animation.
+                                        Used by the to string function.
+          :param bool ring: Ring mode.  Defaults to ``False``.
+          """
+          if newAnimation:
+            logging.info("Init Comet: " + animation)
+            oAnim = Comet(pixels,
+                          speed=animationParams['speed'],
+                          background_color=animationParams['background_color'],
+                          tail_length=animationParams['tail_length'],
+                          reverse=animationParams['reverse'],
+                          bounce=animationParams['bounce'],
+                          color=colorToTuple(animationParams['color']))
+        
+        elif animation == 'colorcycle':
+          """
+          Animate a sequence of one or more colors, cycling at the specified speed.
+        
+          :param pixel_object: The initialised LED object.
+          :param float speed: Animation speed in seconds, e.g. ``0.1``.
+          :param colors: A list of colors to cycle through in ``(r, g, b)`` tuple, or ``0x000000`` hex
+                         format. Defaults to a rainbow color cycle.
+          :param start_color: An index (from 0) for which color to start from. Default 0 (first color).
+          """
+          if newAnimation:
+            logging.info("Init ColorCycle: " + animation)
 
-      elif animation == 'rain':
-        """
-        Droplets of rain.
+            colors = colorToTuple(animationParams['colors'])
+            pprint.pprint(colors)
 
-        :param grid_object: The initialised PixelGrid object.
-        :param float speed: Animation speed in seconds, e.g. ``0.1``.
-        :param color: Animation color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
-        :param count: Number of sparkles to generate per animation cycle.
-        :param length: Number of pixels per raindrop (Default 3)
-        :param background: Background color (Default BLACK).
-        """
-        if newAnimation:
-          logging.info("Init Rain: " + animation)
-          oAnim = Rain(pixels,
-                       speed=animationParams['speed'],
-                       count=animationParams['count'],
-                       length=animationParams['length'],
-                       background=colorToTuple(animationParams['background']),
-                       color=colorToTuple(animationParams['color']))
-
-      elif animation == 'multicolorcomet':
-        """
-        A multi-color comet animation.
-
-        :param pixel_object: The initialised LED object.
-        :param float speed: Animation speed in seconds, e.g. ``0.1``.
-        :param colors: Animation colors in a list or tuple of entries in
-                                ``(r, g, b)`` tuple, or ``0x000000`` hex format.
-        :param int tail_length: The length of the comet. Defaults to 25% of the length of the
-                                ``pixel_object``. Automatically compensates for a minimum of 2 and a
-                                maximum of the length of the ``pixel_object``.
-        :param bool reverse: Animates the comet in the reverse order. Defaults to ``False``.
-        :param bool bounce: Comet will bounce back and forth. Defaults to ``True``.
-        :param Optional[string] name: A human-readable name for the Animation.
-                                      Used by the to string function.
-        :param bool ring: Ring mode.  Defaults to ``False``.
-        :param bool off_pixels: Turn pixels off after the animation passes them. Defaults to ``True``.
-                                Setting to False will result in all pixels not currently in the comet
-                                to remain on and set to a color after the comet passes.
-        """
-        if newAnimation:
-          logging.info("Init MulticolorComet: " + animation)
-          oAnim = MulticolorComet(pixels,
-                                  speed=animationParams['speed'],
-                                  tail_length=animationParams['tail_length'],
-                                  reverse=animationParams['reverse'],
-                                  bounce=animationParams['bounce'],
-                                  off_pixels=animationParams['off_pixels'],
-                                  colors=[colorToTuple(animationParams['color'])])
-
-      elif animation == 'pulse':
-        """
-        Pulse all pixels a single color.
-
-        :param pixel_object: The initialised LED object.
-        :param float speed: Animation refresh rate in seconds, e.g. ``0.1``.
-        :param color: Animation color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
-        :param period: Period to pulse the LEDs over.  Default 5.
-        :param breath: Duration to hold minimum and maximum intensity levels. Default 0.
-        :param min_intensity: Lowest brightness level of the pulse. Default 0.
-        :param max_intensity: Highest brightness elvel of the pulse. Default 1.
-        """
-        if newAnimation:
-          logging.info("Init Pulse: " + animation)
-          oAnim = Pulse(pixels,
-                        speed=animationParams['speed'],
-                        period=animationParams['period'],
-                        breath=animationParams['breath'],
-                        min_intensity=animationParams['min_intensity'],
-                        max_intensity=animationParams['max_intensity'],
-                        color=colorToTuple(animationParams['color']))
-
-      elif animation == 'rainbow':
-        """
-        The classic rainbow color wheel.
-
-        :param pixel_object: The initialised LED object.
-        :param float speed: Animation refresh rate in seconds, e.g. ``0.1``.
-        :param float period: Period to cycle the rainbow over in seconds.  Default 5.
-        :param float step: Color wheel step.  Default 1.
-        :param str name: Name of animation (optional, useful for sequences and debugging).
-        :param bool precompute_rainbow: Whether to precompute the rainbow.  Uses more memory.
-                                        (default True).
-        """
-        if newAnimation:
-          logging.info("Init Rainbow: " + animation)
-          oAnim = Rainbow(pixels,
+            oAnim = ColorCycle(pixels,
+                               speed=animationParams['speed'],
+                               start_color=animationParams['start_color'],
+                               colors=colorToTuple(animationParams['colors']))
+        
+        elif animation == 'blink':
+          """
+          Blink a color on and off.
+        
+          :param pixel_object: The initialised LED object.
+          :param float speed: Animation speed in seconds, e.g. ``0.1``.
+          :param color: Animation color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
+          """
+          if newAnimation:
+            logging.info("Init Blink: " + animation)
+            oAnim = Blink(pixels,
+                          speed=animationParams['speed'],
+                          color=colorToTuple(animationParams['color']))
+        
+        elif animation == 'customcolorchase':
+          """
+          Chase pixels in one direction, like a theater marquee with Custom Colors
+        
+          :param pixel_object: The initialised LED object.
+          :param float speed: Animation speed rate in seconds, e.g. ``0.1``.
+          :param colors: Animation colors in list of `(r, g, b)`` tuple, or ``0x000000`` hex format
+          :param size: Number of pixels to turn on in a row.
+          :param spacing: Number of pixels to turn off in a row.
+          :param reverse: Reverse direction of movement.
+          """
+          if newAnimation:
+            logging.info("Init CustomColorChase: " + animation)
+            oAnim = CustomColorChase(pixels,
+                                     speed=animationParams['speed'],
+                                     size=animationParams['size'],
+                                     reverse=animationParams['reverse'],
+                                     spacing=animationParams['spacing'],
+                                     colosrs=[colorToTuple(animationParams['color'])])
+        
+        elif animation == 'rain':
+          """
+          Droplets of rain.
+        
+          :param grid_object: The initialised PixelGrid object.
+          :param float speed: Animation speed in seconds, e.g. ``0.1``.
+          :param color: Animation color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
+          :param count: Number of sparkles to generate per animation cycle.
+          :param length: Number of pixels per raindrop (Default 3)
+          :param background: Background color (Default BLACK).
+          """
+          if newAnimation:
+            logging.info("Init Rain: " + animation)
+            oAnim = Rain(pixels,
+                         speed=animationParams['speed'],
+                         count=animationParams['count'],
+                         length=animationParams['length'],
+                         background=colorToTuple(animationParams['background']),
+                         color=colorToTuple(animationParams['color']))
+        
+        elif animation == 'multicolorcomet':
+          """
+          A multi-color comet animation.
+        
+          :param pixel_object: The initialised LED object.
+          :param float speed: Animation speed in seconds, e.g. ``0.1``.
+          :param colors: Animation colors in a list or tuple of entries in
+                                  ``(r, g, b)`` tuple, or ``0x000000`` hex format.
+          :param int tail_length: The length of the comet. Defaults to 25% of the length of the
+                                  ``pixel_object``. Automatically compensates for a minimum of 2 and a
+                                  maximum of the length of the ``pixel_object``.
+          :param bool reverse: Animates the comet in the reverse order. Defaults to ``False``.
+          :param bool bounce: Comet will bounce back and forth. Defaults to ``True``.
+          :param Optional[string] name: A human-readable name for the Animation.
+                                        Used by the to string function.
+          :param bool ring: Ring mode.  Defaults to ``False``.
+          :param bool off_pixels: Turn pixels off after the animation passes them. Defaults to ``True``.
+                                  Setting to False will result in all pixels not currently in the comet
+                                  to remain on and set to a color after the comet passes.
+          """
+          if newAnimation:
+            logging.info("Init MulticolorComet: " + animation)
+            oAnim = MulticolorComet(pixels,
+                                    speed=animationParams['speed'],
+                                    tail_length=animationParams['tail_length'],
+                                    reverse=animationParams['reverse'],
+                                    bounce=animationParams['bounce'],
+                                    off_pixels=animationParams['off_pixels'],
+                                    colors=[colorToTuple(animationParams['color'])])
+        
+        elif animation == 'pulse':
+          """
+          Pulse all pixels a single color.
+        
+          :param pixel_object: The initialised LED object.
+          :param float speed: Animation refresh rate in seconds, e.g. ``0.1``.
+          :param color: Animation color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
+          :param period: Period to pulse the LEDs over.  Default 5.
+          :param breath: Duration to hold minimum and maximum intensity levels. Default 0.
+          :param min_intensity: Lowest brightness level of the pulse. Default 0.
+          :param max_intensity: Highest brightness elvel of the pulse. Default 1.
+          """
+          if newAnimation:
+            logging.info("Init Pulse: " + animation)
+            oAnim = Pulse(pixels,
                           speed=animationParams['speed'],
                           period=animationParams['period'],
-                          step=animationParams['step'],
-                          name=animationParams['name'],
-                          precompute_rainbow=animationParams['precompute_rainbow'])
+                          breath=animationParams['breath'],
+                          min_intensity=animationParams['min_intensity'],
+                          max_intensity=animationParams['max_intensity'],
+                          color=colorToTuple(animationParams['color']))
+        
+        elif animation == 'rainbow':
+          """
+          The classic rainbow color wheel.
+        
+          :param pixel_object: The initialised LED object.
+          :param float speed: Animation refresh rate in seconds, e.g. ``0.1``.
+          :param float period: Period to cycle the rainbow over in seconds.  Default 5.
+          :param float step: Color wheel step.  Default 1.
+          :param str name: Name of animation (optional, useful for sequences and debugging).
+          :param bool precompute_rainbow: Whether to precompute the rainbow.  Uses more memory.
+                                          (default True).
+          """
+          if newAnimation:
+            logging.info("Init Rainbow: " + animation)
+            oAnim = Rainbow(pixels,
+                            speed=animationParams['speed'],
+                            period=animationParams['period'],
+                            step=animationParams['step'],
+                            name=animationParams['name'],
+                            precompute_rainbow=animationParams['precompute_rainbow'])
+        
+        elif animation == 'rainbowchase':
+          """
+          Chase pixels in one direction, like a theater marquee but with rainbows!
+        
+          :param pixel_object: The initialised LED object.
+          :param float speed: Animation speed rate in seconds, e.g. ``0.1``.
+          :param color: Animation color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
+          :param size: Number of pixels to turn on in a row.
+          :param spacing: Number of pixels to turn off in a row.
+          :param reverse: Reverse direction of movement.
+          :param step: How many colors to skip in ``colorwheel`` per bar (default 8)
+          """
+          if newAnimation:
+            logging.info("Init RainbowChase: " + animation)
+            oAnim = RainbowChase(pixels,
+                                 speed=animationParams['speed'],
+                                 size=animationParams['size'],
+                                 spacing=animationParams['spacing'],
+                                 reverse=animationParams['reverse'],
+                                 step=animationParams['step'])
+        
+        elif animation == 'rainbowcomet':
+          """
+          A rainbow comet animation.
+        
+          :param pixel_object: The initialised LED object.
+          :param float speed: Animation speed in seconds, e.g. ``0.1``.
+          :param int tail_length: The length of the comet. Defaults to 10. Cannot exceed the number of
+                                  pixels present in the pixel object, e.g. if the strip is 30 pixels
+                                  long, the ``tail_length`` cannot exceed 30 pixels.
+          :param bool reverse: Animates the comet in the reverse order. Defaults to ``False``.
+          :param bool bounce: Comet will bounce back and forth. Defaults to ``False``.
+          :param int colorwheel_offset: Offset from start of colorwheel (0-255).
+          :param int step: Colorwheel step (defaults to automatic).
+          :param bool ring: Ring mode.  Defaults to ``False``.
+          """
+          if newAnimation:
+            logging.info("Init RainbowComet: " + animation)
+            oAnim = RainbowComet(pixels,
+                                 speed=animationParams['speed'],
+                                 tail_length=animationParams['tail_length'],
+                                 reverse=animationParams['reverse'],
+                                 colorwheel_offset=animationParams['colorwheel_offset'],
+                                 step=animationParams['step'])
 
-      elif animation == 'rainbowchase':
-        """
-        Chase pixels in one direction, like a theater marquee but with rainbows!
-
-        :param pixel_object: The initialised LED object.
-        :param float speed: Animation speed rate in seconds, e.g. ``0.1``.
-        :param color: Animation color in ``(r, g, b)`` tuple, or ``0x000000`` hex format.
-        :param size: Number of pixels to turn on in a row.
-        :param spacing: Number of pixels to turn off in a row.
-        :param reverse: Reverse direction of movement.
-        :param step: How many colors to skip in ``colorwheel`` per bar (default 8)
-        """
-        if newAnimation:
-          logging.info("Init RainbowChase: " + animation)
-          oAnim = RainbowChase(pixels,
-                               speed=animationParams['speed'],
-                               size=animationParams['size'],
-                               spacing=animationParams['spacing'],
-                               reverse=animationParams['reverse'],
-                               step=animationParams['step'],
-                               color=colorToTuple(animationParams['color']))
-
-      elif animation == 'rainbowcomet':
-        """
-        A rainbow comet animation.
-
-        :param pixel_object: The initialised LED object.
-        :param float speed: Animation speed in seconds, e.g. ``0.1``.
-        :param int tail_length: The length of the comet. Defaults to 10. Cannot exceed the number of
-                                pixels present in the pixel object, e.g. if the strip is 30 pixels
-                                long, the ``tail_length`` cannot exceed 30 pixels.
-        :param bool reverse: Animates the comet in the reverse order. Defaults to ``False``.
-        :param bool bounce: Comet will bounce back and forth. Defaults to ``False``.
-        :param int colorwheel_offset: Offset from start of colorwheel (0-255).
-        :param int step: Colorwheel step (defaults to automatic).
-        :param bool ring: Ring mode.  Defaults to ``False``.
-        """
-        if newAnimation:
-          logging.info("Init RainbowComet: " + animation)
-          oAnim = RainbowComet(pixels,
-                               speed=animationParams['speed'],
-                               tail_length=animationParams['tail_length'],
-                               reverse=animationParams['reverse'],
-                               colorwheel_offset=animationParams['colorwheel_offset'],
-                               step=animationParams['step'])
+      except Exception as err:
+        animation = 'none'
+        newAnimation = False
+        if args.verbose:
+          print("%s. create animation " + animation + " failed.", err)
+        logging.error("%s. create animation " + animation + " failed.", err)
+        pass
 
       if newAnimation:
         if args.verbose:
@@ -613,7 +677,11 @@ if __name__ == "__main__":
         loopTime = time.time()
 
         if oAnim is not None:
-          oAnim.animate();
+          
+          if animation == 'energy':
+            updateReactive()
+          else:
+            oAnim.animate()
 
       currentAnimation = animation
       if loopTime - beginloopTime >= animationTime:

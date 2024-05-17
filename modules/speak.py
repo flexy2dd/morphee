@@ -7,14 +7,15 @@ import argparse
 import time
 import configparser
 import pprint
+import json
 import datetime
 import hashlib
-import pygame
 from elevenlabs import Voice, VoiceSettings, save, play
 from elevenlabs.client import ElevenLabs
 
 from modules import core
 from modules import constant
+from modules import mopidy
 
 # ===========================================================================
 # speak Class
@@ -26,27 +27,42 @@ class speak():
     self.core = core.core()
     self.verbose = False
     self.logging = False
-    self.volume = 0.1
+    self.volume = 0
     logging_level: int = self.core.readConf("level", "logging", 20)
     logging.basicConfig(level=int(logging_level))
-    
-  def say(self, sentence):
+
+  def setVerbose(self, verbose):
+    self.verbose = verbose
+
+  def say(self, sentence, volume = None):
 
     voiceName = self.core.readConf('voice', 'speak', 'Thomas')
     
     client = ElevenLabs(
       api_key = self.core.readConf('api_key', 'speak', '')
     )
+
+    #response = client.voices.get_all()
+    #print(response)
     
     hashKey = hashlib.sha1()
     hashKey.update(str(voiceName + sentence).encode('utf-8'))
     fileKey = hashKey.hexdigest()
-    
-    fileName = self.core.getRootPath() + "cache/" + fileKey + ".mp3"
-    
-    #response = client.voices.get_all()
-    #print(response)
-    
+
+    fileNameDetail = self.core.getRootPath() + "cache/" + fileKey + ".json"
+    if not os.path.isfile(fileNameDetail):
+      if self.verbose:
+        print("File " + fileNameDetail + " not already exist for sentence " + sentence + " and voice " + voiceName)
+
+      f = open(fileNameDetail, 'w')
+      f.write(json.dumps({
+        "sentence": sentence,
+        "voice": voiceName,
+        "key": fileKey
+      }))
+      f.close()
+
+    fileName = self.core.getRootPath() + "cache/" + fileKey + ".mp3"    
     if os.path.isfile(fileName):
       if self.verbose:
         print("File " + fileName + " already exist for sentence " + sentence + " and voice " + voiceName)
@@ -71,13 +87,22 @@ class speak():
       if self.verbose:
         print(fileKey + ".mp3")
 
-      self.volume = self.core.readConf('volume', 'speak', 15)
+      if volume==None:
+        self.volume = self.core.readConf('volume', 'speak', 15)
+        if self.verbose:
+          print("Set speak volume " + str(self.volume) + " from conf")
+      else:
+        self.volume = volume
+        if self.verbose:
+          print("Set speak volume " + str(self.volume) + " by value")
 
-      pygame.mixer.init()
-      pygame.mixer.music.load(fileName)
-      pygame.mixer.music.set_volume(int(self.volume) / 10)
-      pygame.mixer.music.play()
+      
+      sUrl = 'file:///opt/morphee/cache/' + fileKey + '.mp3'
 
-      while pygame.mixer.music.get_busy() == True:
-  	    pass
-	
+      oMopidy = mopidy.mopidy()
+      oMopidy.verbose = self.verbose
+      oMopidy.logging = self.logging
+      oMopidy.volume_set(self.volume)
+      oMopidy.tracklist_repeat(False)
+      oMopidy.new_playlist(sUrl)
+

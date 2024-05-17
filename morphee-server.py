@@ -11,7 +11,7 @@ import logging
 import logging.handlers
 import RPi.GPIO as GPIO
 import socketio
-import paho.mqtt.client as mqtt
+import paho.mqtt.publish as publish
 import random
 import json
 import threading
@@ -42,13 +42,18 @@ logging_path: str = oCore.readConf("path", "logging", '.')
 logging.basicConfig(filename=logging_path + '/' + scriptName + '.log', level=int(logging_level))
 
 #sio = socketio.AsyncServer(logger=True, engineio_logger=True)
-sio = socketio.AsyncServer()
+sio = socketio.AsyncServer(cors_allowed_origins='*')
 app = web.Application()
 sio.attach(app)
 
 async def index(request):
   """Serve the client-side application."""
   with open('server/index.html') as f:
+    return web.Response(text=f.read(), content_type='text/html')
+
+async def old(request):
+  """Serve the client-side application."""
+  with open('server/index-old.html') as f:
     return web.Response(text=f.read(), content_type='text/html')
 
 @sio.event
@@ -61,22 +66,36 @@ def disconnect(sid):
 
 ### CARDS
 @sio.event
-async def encode_card(sid, url, style):
-  if url=='' or url==None:
+async def encode_card(sid, jDatas):
+
+  pprint.pprint(jDatas)
+  pprint.pprint(jDatas['url'])
+
+  if jDatas['url']=='' or jDatas==None:
     await sio.emit('encode_ack', {'ack': False, 'title': 'Erreur', 'message': "L'url ne doit pas etre vide"})
     return True
 
-  if style=='' or style==None:
+  if jDatas['style']=='' or jDatas==None:
     await sio.emit('encode_ack', {'ack': False, 'title': 'Erreur', 'message': "Le style doit etre defini"})
     return True
 
-  oMqttClient.publish(constant.MQTT_TOPIC_CARTE_ENCODE,
-    json.dumps({
-      "url": url,
-      "style": style
-    })
+  if jDatas['animation']=='' or jDatas==None:
+    await sio.emit('encode_ack', {'ack': False, 'title': 'Erreur', 'message': "L'animation doit etre definie"})
+    return True
+
+  if jDatas['mode']=='' or jDatas==None:
+    await sio.emit('encode_ack', {'ack': False, 'title': 'Erreur', 'message': "Le mode doit etre defini"})
+    return True
+
+  publish.single(
+    constant.MQTT_TOPIC_CARTE_ENCODE,
+    json.dumps(jDatas),
+    hostname=str(constant.MQTT_HOST),
+    port=int(constant.MQTT_PORT),
+    client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
   )
-  await sio.emit('encode_ack', {'ack': True})  
+
+  await sio.emit('encode_ack', {'ack': True})
   time.sleep(0.50)
 
 async def encoded_card(ack, title = "", message = ""):
@@ -84,50 +103,27 @@ async def encoded_card(ack, title = "", message = ""):
   time.sleep(0.50)
 
 @sio.event
-async def set_volume(sid, data):
-  oCore = core.core()
-  oCore.setVolume(data)
-  await sio.emit('update_volume', {'volume': str(data)})
+async def read_card(sid):
+  publish.single(
+    constant.MQTT_TOPIC_CARTE_READ,
+    json.dumps({}),
+    hostname=str(constant.MQTT_HOST),
+    port=int(constant.MQTT_PORT),
+    client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
+  )
+  time.sleep(0.50)
 
-app.router.add_static('/static', 'server/static')
+app.router.add_static('/css', 'server/css')
+app.router.add_static('/scss', 'server/scss')
+app.router.add_static('/images', 'server/images')
+app.router.add_static('/custom', 'server/custom')
+app.router.add_static('/assets', 'server/assets')
+app.router.add_static('/js', 'server/js')
+app.router.add_get('/old', old)
+app.router.add_get('/index.html', index)
 app.router.add_get('/', index)
 
-# ===========================================================================
-# MQTT
-# ===========================================================================
-def on_connect(client, userdata, flags, reason_code, properties):
-  if args.verbose:
-    print("MQTT Connection Success")
-
-  client.subscribe(constant.MQTT_TOPIC_CARTE_ENCODE)
-  client.subscribe(constant.MQTT_TOPIC_CARTE_ENCODED)
-
-  if reason_code == 0:
-    logging.info("MQTT Connection Success")
-  else:
-    logging.critical("Failed to connect, return code %d\n", reason_code)
-
-def on_message(client, userdata, msg):
-
-  if args.verbose:
-    print("MQTT onMessage")
-    print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
-  
-  logging.info(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
-
-  if msg.topic == constant.MQTT_TOPIC_CARTE_ENCODED:
-
-    payload = msg.payload.decode("utf-8")
-    logging.info("Recevied encoded_ack")
-    asyncio.run(encoded_card(ack=True))
-    time.sleep(0.5)
-    
-oMqttClient = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, f"mqtt-{scriptName}-{random.randint(0, 1000)}")
-oMqttClient.on_message = on_message
-oMqttClient.on_connect = on_connect
-oMqttClient.connect(str(constant.MQTT_HOST), int(constant.MQTT_PORT))
-oMqttClient.loop_start();
 print("MQTT Subscribe")
 if __name__ == '__main__':
     web.run_app(app, port=80)
-    
+

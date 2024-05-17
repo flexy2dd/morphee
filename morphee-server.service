@@ -5,8 +5,8 @@ After=network.target
 [Service]
 ExecStart=/usr/bin/python3 /opt/morphee/morphee-server.py
 WorkingDirectory=/opt/morphee
-StandardOutput=syslog
-StandardError=syslog
+StandardOutput=append:/var/log/morphee-server.log
+StandardError=append:/var/log/morphee-server.log
 Restart=always
 User=root
 PIDFile=/tmp/morphee-server.pid

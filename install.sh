@@ -157,11 +157,11 @@ if confirm "Do you wish to continue?"; then
     if confirm "You wish update dependencies? [RECOMMENDED]"; then
         newline
         echo "Add some dependencies..."
-        apt-get install git build-essential python3-pip python3-pygame python3-dev python3-rpi.gpio python3-pil i2c-tools libjpeg-dev zlib1g-dev libfreetype6-dev liblcms2-dev libopenjp2-7 libtiff5 mosquitto libasound2-dev
+        apt-get install git build-essential python3-pip python3-dev python3-rpi.gpio python3-pil i2c-tools libjpeg-dev zlib1g-dev libfreetype6-dev liblcms2-dev libopenjp2-7 libtiff5 mosquitto libasound2-dev python3-scipy python3-pyaudio
 
         newline
         echo "Add python dependencies..."
-        pip3 install luma.oled configparser python-dateutil simpleaudio python-socketio aiohttp aiodns rpi_ws281x adafruit-circuitpython-neopixel paho-mqtt elevenlabs Mopidy-ALSAMixer yt-dlp
+        pip3 install luma.oled configparser python-dateutil simpleaudio python-socketio aiohttp aiodns rpi_ws281x adafruit-circuitpython-neopixel paho-mqtt elevenlabs Mopidy-ALSAMixer yt-dlp mfrc522-python jsonpath-ng
     fi
 
     newline

@@ -1,0 +1,85 @@
+.content-wrapper .img-updown  {
+    position: absolute;
+    top: 15px;
+    right: 10px;
+    left: auto;
+    animation: bounce-animation 5s infinite ease-in;
+}
+
+.rtl .content-wrapper .img-updown  {
+    position: absolute;
+    top: 15px;
+    left: 10px;
+    right: auto;
+    animation: bounce-animation 5s infinite ease-in;
+}
+
+.calendar_box #calendar {
+    height: 417px;
+    overflow-y: scroll;
+}
+
+@media screen and (max-width: 1440px) {
+    .calendar_box #calendar {
+        height: 482px;
+        overflow-y: scroll;
+        margin-right: 10px;
+        align-content: space-around;
+    }
+}
+
+
+@keyframes bounce-animation  {
+  0% {
+    transform: translateY(0);
+    transition: 0.5s;
+  }
+  50% {
+    transform: translateY(-5px);
+    transition: 0.5s;
+  }
+  100% {
+    transform: translateY(0);
+    transition: 0.5s;
+  }
+}
+
+
+@media screen and (max-width: 768px) {
+    .content-wrapper .img-updown  {
+        right: -10px;    
+    }
+}
+
+
+/*-----------Dashboard-2-----------*/
+
+.first-section .first-plan {
+    border-radius: 5px;
+    padding: 18px 25px;
+    position: relative;
+    overflow: hidden;
+}
+.first-section .first-plan .bg-img {
+    position: absolute;
+    top: 8px;
+    opacity: 0.9;
+    transform: rotate(-25deg);
+    right: 0px;
+}
+.rtl .first-section .first-plan {
+    border-radius: 5px;
+    padding: 18px 25px;
+    position: relative;
+    overflow: hidden;
+}
+.rtl .first-section .first-plan .bg-img {
+    position: absolute;
+    top: 8px;
+    opacity: 0.9;
+    transform: rotate(-25deg);
+    left: 0px;
+    right: auto;
+}
+
+/*-----------Dashboard-2-----------*/

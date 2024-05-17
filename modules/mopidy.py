@@ -7,11 +7,13 @@ import argparse
 import time
 import configparser
 import requests
+import json
 import pprint
 import datetime
 import hashlib
 
 from modules import core
+from modules import tools
 from modules import constant
 
 # ===========================================================================
@@ -74,35 +76,24 @@ class mopidy():
 
   #increase volume but not higher than 100
   def volume_up(self):
-    if self.volume == 0:
-      self.volume = 1
-    elif self.volume == 1:
-      self.volume = 10
-    elif self.volume == 100:
-      self.volume = 100
-    else:
-      self.volume += 10
-
-    r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.mixer.set_volume", "params": {"volume": self.volume}})
-    time.sleep(0.1)
-
-    logging.info('MOPIDY volume_up ' + str(self.volume) + ' > ' + r.text)
+    self.volume = self.volume + 1
+    self.volume_set(volume)
 
   #decrease volume but not lower than 0
   def volume_down(self):
-    if self.volume == 10:
-      self.volume = 1
-    elif self.volume == 1:
-      self.volume = 0
-    elif self.volume == 0:
-      self.volume = 0
-    else:
-      self.volume -= 10
-
-    r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.mixer.set_volume", "params": {"volume": self.volume}})
-    time.sleep(0.1)
+    self.volume = self.volume - 1
+    self.volume_set(volume)
     
-    logging.info('MOPIDY volume_down ' + str(self.volume) + ' > ' + r.text)
+  def volume_set(self, volume):
+    volume = int(volume)
+    if volume < 0:
+      volume = 0
+    elif volume > 100:
+      volume = 100
+
+    r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.mixer.set_volume", "params": {"volume": volume}})
+    time.sleep(0.1)
+    logging.info('MOPIDY volume_set ' + str(volume) + ' > ' + r.text)
 
   def new_playlist(self, uri):
 
@@ -132,13 +123,79 @@ class mopidy():
     #Start playing tracklist
     self.play()
 
+  #set consume for tracklist repeat
+  def tracklist_repeat(self, value = False):
+    r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.tracklist.set_repeat", "params": {"value": value}})
+    time.sleep(0.1)
+    logging.info('MOPIDY set_repeat > ' + r.text)
+
+  #set consume for tracklist single
+  def tracklist_single(self, value = False):
+    r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.tracklist.set_single", "params": {"value": value}})
+    time.sleep(0.1)
+    logging.info('MOPIDY set_single > ' + r.text)
+
+  #set consume for tracklist consume
+  def tracklist_consume(self, value = False):
+    r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.tracklist.set_consume", "params": {"value": value}})
+    time.sleep(0.1)
+    logging.info('MOPIDY set_consume > ' + r.text)
+
   #set consume for tracklist off
   def tracklist_off(self):
     r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.tracklist.set_consume", "params": {"value": False}})
     time.sleep(0.1)
     logging.info('MOPIDY tracklist_off > ' + r.text)
 
-  def volume_set(self, volume):
-    r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.mixer.set_volume", "params": {"volume": volume}})
-    time.sleep(0.1)
-    logging.info('MOPIDY volume_set ' + str(volume) + ' > ' + r.text)
+  def get_playing_details(self):
+    result = {
+      'length': 0,
+      'position': 0,
+      'artist': '',
+      'album': '',
+      'name': 0
+    }
+    r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.playback.get_current_track"})
+    if r.status_code==200:
+      try:
+        jsonDatas = r.json()['result']
+    
+        if not tools.isEmpty(jsonDatas):
+
+          if not tools.isEmpty(jsonDatas['uri']):
+            result['url'] = jsonDatas['uri']
+            
+          if not tools.isEmpty(jsonDatas['length']):
+            result['length'] = jsonDatas['length']
+          
+          if not tools.isEmptyString(jsonDatas['name']):
+            result['name'] = jsonDatas['name']
+
+          if 'album' in jsonDatas:
+            if not tools.isEmptyString(jsonDatas['album']['name']):
+              result['album'] = jsonDatas['album']['name']
+
+          if 'artists' in jsonDatas:
+            if not tools.isEmptyString(jsonDatas['artists'][0]['name']):
+              result['artist'] = jsonDatas['artists'][0]['name']
+
+      except:
+        logging.error("get_playing_details unexpected error:", sys.exc_info()[0])
+        raise
+
+    r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.playback.get_time_position"})
+    if r.status_code==200:
+      try:
+        jsonDatas = r.json()['result']
+        
+        if not tools.isEmpty(jsonDatas):
+          result['position'] = jsonDatas
+
+      except:
+
+        logging.error("get_playing_details unexpected error:", sys.exc_info()[0])
+        raise
+
+    logging.info('MOPIDY get_playing_details > ' + r.text)
+    
+    return result

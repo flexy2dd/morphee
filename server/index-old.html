@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<title>Morphee control</title>
+<head>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="/static/mdl/1.3.0/material.min.css">
+  <script defer src="/static/mdl/1.3.0/material.min.js"></script>
+  <script src="/static/jquery/3.6.0/jquery-3.6.0.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+
+  </style>
+</head>
+<body>
+<div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+  <header class="mdl-layout__header">
+    <div class="mdl-layout__header-row">
+        <!-- Title -->
+        <span class="mdl-layout-title">Morphee</span>
+        <!-- Add spacer, to align navigation to the right -->
+        <div class="mdl-layout-spacer"></div>
+        <!-- Navigation -->
+      </div>
+    </header>
+    <div class="mdl-layout__drawer">
+      <span class="mdl-layout-title">Morphee</span>
+      <nav class="mdl-navigation">
+        <a class="mdl-navigation__link" href="#0" id="btn-create-card">Encoder une carte</a>
+      </nav>
+    </div>
+    <main class="mdl-layout__content">
+      
+      <div style="" id="panel-create-card">
+
+        <div class="mdl-grid">
+          <div class="mdl-cell mdl-cell--1-col">
+            <div class="demo-card-wide mdl-card mdl-shadow--2dp">
+              <div class="mdl-card__title">
+                <h2 class="mdl-card__title-text">Encoder une carte</h2>
+              </div>
+              <form action="#">
+            <div class="mdl-card__actions mdl-card--border">
+              <h2 class="mdl-card__subtitle-text">Style</h2>
+              <div class="mdl-card__supporting-text">
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="style-zen" style="display:block;">
+                  <input type="radio" id="style-zen" class="mdl-radio__button" name="btn-style" value="zen">
+                  <span class="mdl-radio__label">Zen</span>
+                </label>
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="style-nature" style="display:block;">
+                  <input type="radio" id="style-nature" class="mdl-radio__button" name="btn-style" value="nature">
+                  <span class="mdl-radio__label">Nature</span>
+                </label>
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="style-music" style="display:block;">
+                  <input type="radio" id="style-music" class="mdl-radio__button" name="btn-style" value="music" checked="checked">
+                  <span class="mdl-radio__label">Musique</span>
+                </label>
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="style-relax" style="display:block;">
+                  <input type="radio" id="style-relax" class="mdl-radio__button" name="btn-style" value="relax">
+                  <span class="mdl-radio__label">Relaxation</span>
+                </label>
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="style-love" style="display:block;">
+                  <input type="radio" id="style-love" class="mdl-radio__button" name="btn-style" value="love">
+                  <span class="mdl-radio__label">Amour</span>
+                </label>
+              </div>
+            </div>
+            <div class="mdl-card__actions mdl-card--border">
+              <h2 class="mdl-card__subtitle-text">Mode de lecture</h2>
+              <div class="mdl-card__supporting-text">
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="mode-once" style="display:block;">
+                  <input type="radio" id="mode-once" class="mdl-radio__button" name="btn-mode" value="once" checked="checked">
+                  <span class="mdl-radio__label">Unique</span>
+                </label>
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="mode-loop" style="display:block;">
+                  <input type="radio" id="mode-loop" class="mdl-radio__button" name="btn-mode" value="loop">
+                  <span class="mdl-radio__label">Infini</span>
+                </label>
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="mode-shuffle" style="display:block;">
+                  <input type="radio" id="mode-shuffle" class="mdl-radio__button" name="btn-mode" value="shuffle">
+                  <span class="mdl-radio__label">Aléatoire</span>
+                </label>
+              </div>
+            </div>
+            <div class="mdl-card__actions mdl-card--border">
+              <h2 class="mdl-card__subtitle-text">Animation</h2>
+              <div class="mdl-card__supporting-text">
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="animation-none" style="display:block;">
+                  <input type="radio" id="animation-none" class="mdl-radio__button" name="btn-animation" value="none" checked="checked">
+                  <span class="mdl-radio__label">Aucune</span>
+                </label>
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="animation-sparklepulse" style="display:block;">
+                  <input type="radio" id="animation-sparklepulse" class="mdl-radio__button" name="btn-animation" value="sparklepulse">
+                  <span class="mdl-radio__label">Sparkle Pulse</span>
+                </label>
+              </div>
+            </div>
+            <div class="mdl-card__actions mdl-card--border">
+              <h2 class="mdl-card__subtitle-text">Url</h2>
+              <div class="mdl-card__supporting-text">
+                <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+                  <input class="mdl-textfield__input" type="text" id="modipy-url">
+                  <label class="mdl-textfield__label" for="modipy-url">Modipy url...</label>
+                </div>
+              </div>
+            </div>
+              <div class="mdl-card__supporting-text">            
+                <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="btn-read-card">
+                  Lecture
+                </button>
+                <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--accent" id="btn-encode-card">
+                  Encode
+                </button>
+              </div>
+              </form>
+              <div class="mdl-card__supporting-text">
+                  <div id="progress-encode" class="mdl-progress mdl-js-progress mdl-progress__indeterminate" style="display:none"></div>
+              </div>
+              <div class="mdl-card__menu">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <dialog class="mdl-dialog">
+        <h4 class="mdl-dialog__title">Allow data collection?</h4>
+        <div class="mdl-dialog__content">
+          <p>
+            Allowing us to collect data will let us get you the information you want faster.
+          </p>
+        </div>
+        <div class="mdl-dialog__actions">
+          <button type="button" class="mdl-button close">Close</button>
+        </div>
+      </dialog>
+
+    </main>
+  </div>
+
+  <script src="/static/socket.io/4.0.0/socket.io.js"></script>
+  <script src="/static/mqtt/5.6.0/mqtt.js"></script>
+  <script>
+    const zeroPad = (num, places) => String(num).padStart(places, '0')
+
+    const options = {
+      clean: true,
+      connectTimeout: 4000,
+      clientId: 'emqx_test',
+    }
+    const client  = mqtt.connect('ws://morphee.local:9001', options)
+    client.on('connect', function () {
+      console.log('Connected')
+      client.subscribe('Morphee/carte/readed', function (err) {
+        if (err)
+          console.log('subscript fail ', err)
+      })
+      client.subscribe('Morphee/carte/encoded', function (err) {
+        if (err)
+          console.log('subscript fail ', err)
+      })
+    })
+
+    client.on('message', function (topic, message) {
+      // message is Buffer
+      console.log(topic)
+      if (topic=='Morphee/carte/readed') {
+        const payload = JSON.parse(message.toString());
+        if (payload.readed) {
+          document.getElementById('modipy-url').parentNode.MaterialTextfield.change(payload.url);
+          document.getElementById('mode-' + payload.mode).parentNode.MaterialRadio.check();
+          document.getElementById('style-' + payload.style).parentNode.MaterialRadio.check();
+          document.getElementById('animation-' + payload.style).parentNode.MaterialRadio.check();
+        }
+      } else if (topic=='Morphee/carte/encoded') {
+        const payload = JSON.parse(message.toString());
+        if (payload.encoded) {
+          $('.mdl-dialog .mdl-dialog__title').text('La carte est encodée');
+          $('.mdl-dialog .mdl-dialog__content p').text('Encodage de la carte réussi');
+        } else {
+          $('.mdl-dialog .mdl-dialog__title').text("La carte n'est encodée");
+          $('.mdl-dialog .mdl-dialog__content p').text("L'encodage de la carte a échouée");
+        }
+        dialog.showModal();
+        $("#btn-encode-card").show();
+        $('#progress-encode').hide();
+      }
+      console.log(message.toString())
+    })
+
+    var socket = io.connect();
+
+    function checkRemaining() {
+      socket.emit("check_remaining", 0);
+      setTimeout(function(){ 
+          checkRemaining();
+        }, 
+        1000
+      );
+    }
+
+    function minuteToHHMM(minutes) {
+      var hours = (minutes / 60);
+      var rhours = Math.floor(hours);
+      var minutes = (hours - rhours) * 60;
+      var rminutes = Math.round(minutes);
+      return zeroPad(rhours, 2) + ':' + zeroPad(rminutes, 2);
+    }
+
+    $( document ).ready(function() {
+
+      var dialog = document.querySelector('dialog');
+      if (! dialog.showModal) {
+        dialogPolyfill.registerDialog(dialog);
+      }
+      dialog.querySelector('.close').addEventListener('click', function() {
+        dialog.close();
+      });
+
+      $("#btn-read-card").on("click", function(event) {
+        event.preventDefault();
+        //$("#btn-read-card").hide();
+        socket.emit("read_card");
+      });
+      socket.on("read_ack", (data) => {
+        if (data.ack) {
+            $("#btn-read-card").show();
+        } else {
+            $('.mdl-dialog .mdl-dialog__title').text(data.title);
+            $('.mdl-dialog .mdl-dialog__content p').text(data.message);
+            dialog.showModal();
+        }
+      });
+
+      $("#btn-encode-card").on("click", function(event) {
+        event.preventDefault();
+        var modipyUrl = $("#modipy-url").val();
+        var modipyStyle = $('input[type=radio][name=btn-style]:checked').val();
+        var modipyMode = $('input[type=radio][name=btn-mode]:checked').val();
+        var modipyAnimation = $('input[type=radio][name=btn-animation]:checked').val();
+        socket.emit("encode_card", modipyUrl, modipyStyle, modipyMode, modipyAnimation);
+      });
+      socket.on("encode_ack", (data) => {
+        if (data.ack) {
+            $("#btn-encode-card").hide();
+            $('#progress-encode').show();
+        } else {
+            $('.mdl-dialog .mdl-dialog__title').text(data.title);
+            $('.mdl-dialog .mdl-dialog__content p').text(data.message);
+            dialog.showModal();
+        }
+      });
+
+      socket.on("encoded_ack", (data) => {
+        $("#btn-encode-card").show();
+        $('#progress-encode').hide();
+      });
+
+    });
+      
+  </script>
+</html>
+</body>
+
+</html>

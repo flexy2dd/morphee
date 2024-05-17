@@ -1,3 +1,4 @@
+import os
 # ===========================================================================
 # Constants
 # ===========================================================================
@@ -6,9 +7,21 @@
 #GPIO_ROTARY_DT = 13
 #GPIO_ROTARY_SW = 26
 # BOARD
-GPIO_ROTARY_CLK = 36
-GPIO_ROTARY_DT = 33
-GPIO_ROTARY_SW = 37
+#GPIO_ROTARY_CLK = 36 -> 16
+#GPIO_ROTARY_DT = 33 -> 13
+#GPIO_ROTARY_SW = 37 -> 15
+
+GPIO_ROTARY_CLK = 16
+GPIO_ROTARY_DT = 13
+GPIO_ROTARY_SW = 15
+
+NUM_PIXELS = 24
+MIN_VOLUME_THRESHOLD = 1e-7
+MIC_RATE = 44100  # 48000
+MIN_FREQUENCY = 200
+MAX_FREQUENCY = 12000
+N_FFT_BINS = 24
+N_ROLLING_HISTORY = 2
 
 MENU_MENU = "menu"
 MENU_COMMAND = "command"
@@ -32,14 +45,60 @@ MQTT_TOPIC_ANIMATION_STOP = "Morphee/animation/stop"
 MQTT_TOPIC_MODE_SET = "Morphee/mode/set"
 MQTT_TOPIC_CARTE_ENCODE = "Morphee/carte/encode"
 MQTT_TOPIC_CARTE_ENCODED = "Morphee/carte/encoded"
+MQTT_TOPIC_CARTE_READ = "Morphee/carte/read"
+MQTT_TOPIC_CARTE_READED = "Morphee/carte/readed"
 MQTT_TOPIC_STATE = "Morphee/state"
 MQTT_TOPIC_RFID = "Morphee/rfid"
+
+MQTT_TOPIC_MOPIDY_VOL = "Morphee/mopidy/stat/vol"
+MQTT_TOPIC_MOPIDY_PLSTATE = "Morphee/mopidy/stat/plstate"
+MQTT_TOPIC_MOPIDY_TRKLIST = "Morphee/mopidy/stat/trklist"
+MQTT_TOPIC_MOPIDY_TRKINDEX = "Morphee/mopidy/stat/trk-index"
+MQTT_TOPIC_MOPIDY_TRKINFOS = "Morphee/mopidy/stat/trk-infos"
+
+STATE_MODE_REGULAR = "regular"
+STATE_MODE_ENCODE = "encode"
+STATE_MODE_READ = "read"
+STATE_MODE_MENU = "menu"
+STATE_MODE_PLAY = "play"
+
+ANIMATION_NONE = 'none'
+ANIMATION_SPARKLEPULSE = 'sparklepulse'
 
 CARD_ENCODE_TIMEOUT = 30
 
 MOPIDY_URL = "http://localhost:6680/mopidy/rpc"
 MOPIDY_VOLUME = 0
 
+LIGHT_ON = 1
+LIGHT_OFF = 0
+
+MODE_ONCE = 'once'
+MODE_LOOP = 'loop'
+MODE_SHUFFLE = 'shuffle'
+
+STYLE_LOVE = 'love'
+STYLE_ZEN = 'zen'
+STYLE_NATURE = 'nature'
+STYLE_MUSIC = 'music'
+STYLE_RELAX = 'relax'
+
+SECTOR_0 = 3
+SECTOR_1 = 7
+SECTOR_2 = 11
+SECTOR_3 = 15
+SECTOR_4 = 19
+SECTOR_5 = 23
+SECTOR_6 = 27
+SECTOR_7 = 31
+SECTOR_8 = 35
+SECTOR_9 = 39
+SECTOR_10	= 43
+SECTOR_11	= 47
+SECTOR_12	= 51
+SECTOR_13	= 55
+SECTOR_14	= 59
+SECTOR_15	= 63
 
 FONT_AWESOME_ICONS = {
   "fa-glass": 0xf000,

@@ -3,6 +3,7 @@ import os
 import codecs
 import time
 import math
+import re 
 import pprint
 
 from luma.core.interface.serial import i2c, spi, pcf8574
@@ -14,6 +15,7 @@ from PIL import ImageFont, ImageDraw, Image
 
 from modules import constant
 from modules import core
+from modules import tools
 
 # ===========================================================================
 # screen Class
@@ -77,18 +79,28 @@ class screen():
 
     self.display()
     
-  def countdown(self, step):
+  def countdown(self, step, picto = "save", title = ""):
     self.draw.rectangle(self.device.bounding_box, outline="black", fill="black")
-    font = ImageFont.truetype('%s/../fonts/digital-7mono.ttf' % os.path.dirname(__file__), 55)
-    self.draw.text((40, 5), '{: >3}'.format(step) , font=font, fill=1)
 
-    font = ImageFont.truetype('%s/../fonts/fontawesome-webfont.ttf' % os.path.dirname(__file__), 30)
-    text = chr(constant.FONT_AWESOME_ICONS["fa-save"])
-    self.draw.text((0, 12), text, font=font, fill=1)
+    if tools.isEmptyString(title):
+      font = ImageFont.truetype('%s/../fonts/digital-7mono.ttf' % os.path.dirname(__file__), 55)
+      self.draw.text((40, 5), '{: >3}'.format(step) , font=font, fill=1)
+      fontawesome = ImageFont.truetype('%s/../fonts/fontawesome-webfont.ttf' % os.path.dirname(__file__), 30)
+      text = chr(constant.FONT_AWESOME_ICONS["fa-" + picto])
+      self.draw.text((0, 12), text, font=fontawesome, fill=1)
+    else:
+      font = ImageFont.truetype('%s/../fonts/digital-7mono.ttf' % os.path.dirname(__file__), 55)
+      self.draw.text((40, 12), '{: >3}'.format(step) , font=font, fill=1)
+      fontawesome = ImageFont.truetype('%s/../fonts/fontawesome-webfont.ttf' % os.path.dirname(__file__), 30)
+      text = chr(constant.FONT_AWESOME_ICONS["fa-" + picto])
+      self.draw.text((0, 20), text, font=fontawesome, fill=1)
+      font = ImageFont.truetype('%s/../fonts/FreeSans.ttf' % os.path.dirname(__file__), 10)
+      self.draw.text((0, 0), title, font=font, fill=1)
+
     self.display()
-    time.sleep(0.5)
+    #time.sleep(0.5)
 
-  def picto(self, picto):
+  def picto(self, picto = "cube"):
 
     self.draw.rectangle(self.device.bounding_box, outline="black", fill="black")
     font = ImageFont.truetype('%s/../fonts/fontawesome-webfont.ttf' % os.path.dirname(__file__), 50)
@@ -109,43 +121,14 @@ class screen():
     second = now.second             
     
     font = ImageFont.truetype('%s/../fonts/digital-7mono.ttf' % os.path.dirname(__file__), 55)
-    
+
+    self.draw.rectangle((0, 0, self.device.width-1, 42), outline="black", fill="black")
+
     self.draw.text((0, 0), now.strftime('%H') , font=font, fill=1)
     self.draw.text((65, 0), now.strftime('%M') , font=font, fill=1)
     
     if ((now.second % 2) == 0): # Toggle colon at 1Hz
       self.draw.text((46, 0), now.strftime(':') , font=font, fill=1)
-
-  def remainingTime(self):
-
-    #oCore = core.core()
-    #remainingtime = oCore.getRemainingTime()
-    remainingtime = '2024-04-30 21:00:00'
-    remainingtime = datetime.datetime.strptime(remainingtime, '%Y-%m-%d %H:%M:%S')
-    
-    nowTime = datetime.datetime.now().replace(microsecond=0) 
-    diffTime = remainingtime - nowTime
-   
-    d = diffTime.days  # days
-    h = divmod(diffTime.seconds, 3600)  # hours
-    m = divmod(h[1], 60)  # minutes
-    s = m[1] # seconds
-
-    hours = h[0] 
-    if d>0:
-      hours += d*24
-    
-    minutes = m[0]
-
-    second = 0      
-    if int(m[0])==0 and int(hours)==0 and int(s)>0:
-      seconds = s
-
-    font = ImageFont.truetype('%s/../fonts/digital-7mono.ttf' % os.path.dirname(__file__), 55)
-    
-    self.draw.text((0, 5), '{:0>2}'.format(hours) , font=font, fill=1)
-    self.draw.text((65, 5), '{:0>2}'.format(minutes) , font=font, fill=1)
-    self.draw.text((46, 5), ':' , font=font, fill=1)
 
   def pulse(self):
 
@@ -186,3 +169,53 @@ class screen():
       if affCurrent>secondsWait:
         self.cls()
         break
+        
+  def play(self, mopidyCurrentTrack):
+    self.draw.rectangle(self.device.bounding_box, outline="black", fill="black")
+    
+    checkIfCache = re.search('cache/[0-9a-z]*\.mp3$', mopidyCurrentTrack['url'])
+    if checkIfCache:
+      return True
+
+    millis = int(mopidyCurrentTrack['length'])
+    seconds = int((millis/1000)%60)
+    minutes = int((millis/(1000*60))%60)
+    hours = int((millis/(1000*60*60))%24)
+    totalTrack = "{0:02d}:{1:02d}:{2:02d}".format(hours, minutes, seconds)
+
+    millis = int(mopidyCurrentTrack['position'])
+    seconds = int((millis/1000)%60)
+    minutes = int((millis/(1000*60))%60)
+    hours = int((millis/(1000*60*60))%24)
+    restTrack = "{0:02d}:{1:02d}:{2:02d}".format(hours, minutes, seconds)
+      
+    logoStyle = Image.open('{}/../icons/style-{}.png'.format(os.path.dirname(__file__), mopidyCurrentTrack['style']))
+    logoStyle.thumbnail((30, 30), Image.Resampling.BICUBIC)
+    self.draw.bitmap((0, 0), logoStyle, fill="white")
+
+    logoMode = Image.open('{}/../icons/mode-{}.png'.format(os.path.dirname(__file__), mopidyCurrentTrack['mode']))
+    logoMode.thumbnail((10, 10), Image.Resampling.BICUBIC)
+    self.draw.bitmap((self.device.width - 11, self.device.height - 11), logoMode, fill="white")
+
+    nbStep = 0
+    totalWidth = (self.device.width - 16)
+    step = mopidyCurrentTrack['length'] / totalWidth
+    if not tools.isEmpty(step):
+      nbStep = mopidyCurrentTrack['position'] / step
+
+    self.draw.rectangle((0, self.device.height - 11, totalWidth, self.device.height-1), outline="white", fill="black")
+    self.draw.rectangle((0, self.device.height - 11, int(nbStep), self.device.height-1), outline="white", fill="white")
+
+    font = ImageFont.truetype('%s/../fonts/FreeSans.ttf' % os.path.dirname(__file__), 10)
+    self.draw.text((0, self.device.height - 22), restTrack, font=font, fill=1)
+    self.draw.text((74, self.device.height - 22), totalTrack, font=font, fill=1)
+
+    self.draw.text((34, 0), mopidyCurrentTrack['artist'], font=font, fill=1)
+    self.draw.text((34, 12), mopidyCurrentTrack['album'], font=font, fill=1)
+    
+    self.draw.text((0, 32), mopidyCurrentTrack['name'], font=font, fill=1)
+
+    font = ImageFont.truetype('%s/../fonts/FreeSans.ttf' % os.path.dirname(__file__), 8)
+    self.draw.text((self.device.width - 12, self.device.height - 22), 'v' + str(mopidyCurrentTrack['volume']), font=font, fill=1)    
+
+    self.display()
