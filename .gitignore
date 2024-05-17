@@ -130,3 +130,8 @@ dmypy.json
 
 ambiance.pid
 desktop.ini
+
+config.conf
+cache/*.json
+speak/*.mp3
+speak/*.json

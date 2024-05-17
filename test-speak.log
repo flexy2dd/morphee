@@ -1,0 +1,53 @@
+INFO:root:MOPIDY volume_set 0 > {"jsonrpc": "2.0", "id": 1, "result": true}
+INFO:root:MOPIDY tracklist_off > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY volume_set 10 > {"jsonrpc": "2.0", "id": 1, "result": true}
+INFO:root:MOPIDY pause > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY tracklist_clear > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY new_playlist file:///opt/morphee/cache/0fe3940ec1d944e79391e1bda668bf50e4448c27.mp3 > {"jsonrpc": "2.0", "id": 1, "result": [{"__model__": "TlTrack", "tlid": 4, "track": {"__model__": "Track", "uri": "file:///opt/morphee/cache/0fe3940ec1d944e79391e1bda668bf50e4448c27.mp3", "name": "0fe3940ec1d944e79391e1bda668bf50e4448c27.mp3", "length": 1253, "bitrate": 127988}}]}
+INFO:root:MOPIDY new_playlist set random false > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY play > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY volume_set 0 > {"jsonrpc": "2.0", "id": 1, "result": true}
+INFO:root:MOPIDY tracklist_off > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY volume_set 10 > {"jsonrpc": "2.0", "id": 1, "result": true}
+INFO:root:MOPIDY tracklist_off > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY pause > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY tracklist_clear > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY new_playlist file:///opt/morphee/cache/0fe3940ec1d944e79391e1bda668bf50e4448c27.mp3 > {"jsonrpc": "2.0", "id": 1, "result": [{"__model__": "TlTrack", "tlid": 5, "track": {"__model__": "Track", "uri": "file:///opt/morphee/cache/0fe3940ec1d944e79391e1bda668bf50e4448c27.mp3", "name": "0fe3940ec1d944e79391e1bda668bf50e4448c27.mp3", "length": 1253, "bitrate": 127988}}]}
+INFO:root:MOPIDY new_playlist set random false > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY play > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY volume_set 0 > {"jsonrpc": "2.0", "id": 1, "result": true}
+INFO:root:MOPIDY tracklist_off > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY volume_set 10 > {"jsonrpc": "2.0", "id": 1, "result": true}
+INFO:root:MOPIDY tracklist_off > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY pause > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY tracklist_clear > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY new_playlist file:///opt/morphee/cache/0fe3940ec1d944e79391e1bda668bf50e4448c27.mp3 > {"jsonrpc": "2.0", "id": 1, "result": [{"__model__": "TlTrack", "tlid": 6, "track": {"__model__": "Track", "uri": "file:///opt/morphee/cache/0fe3940ec1d944e79391e1bda668bf50e4448c27.mp3", "name": "0fe3940ec1d944e79391e1bda668bf50e4448c27.mp3", "length": 1253, "bitrate": 127988}}]}
+INFO:root:MOPIDY new_playlist set random false > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY play > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY volume_set 0 > {"jsonrpc": "2.0", "id": 1, "result": true}
+INFO:root:MOPIDY tracklist_off > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY volume_set 10 > {"jsonrpc": "2.0", "id": 1, "result": true}
+INFO:root:MOPIDY tracklist_off > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY pause > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY tracklist_clear > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY new_playlist file:///opt/morphee/cache/58edefa4dbf4593e838f16dbcf99f4aaf5902348.mp3 > {"jsonrpc": "2.0", "id": 1, "result": [{"__model__": "TlTrack", "tlid": 7, "track": {"__model__": "Track", "uri": "file:///opt/morphee/cache/58edefa4dbf4593e838f16dbcf99f4aaf5902348.mp3", "name": "58edefa4dbf4593e838f16dbcf99f4aaf5902348.mp3", "length": 1671, "bitrate": 127988}}]}
+INFO:root:MOPIDY new_playlist set random false > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY play > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY volume_set 0 > {"jsonrpc": "2.0", "id": 1, "result": true}
+INFO:root:MOPIDY tracklist_off > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY volume_set 10 > {"jsonrpc": "2.0", "id": 1, "result": true}
+INFO:root:MOPIDY tracklist_off > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY pause > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY tracklist_clear > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY new_playlist file:///opt/morphee/cache/58edefa4dbf4593e838f16dbcf99f4aaf5902348.mp3 > {"jsonrpc": "2.0", "id": 1, "result": [{"__model__": "TlTrack", "tlid": 8, "track": {"__model__": "Track", "uri": "file:///opt/morphee/cache/58edefa4dbf4593e838f16dbcf99f4aaf5902348.mp3", "name": "58edefa4dbf4593e838f16dbcf99f4aaf5902348.mp3", "length": 1671, "bitrate": 127988}}]}
+INFO:root:MOPIDY new_playlist set random false > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY play > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY volume_set 0 > {"jsonrpc": "2.0", "id": 1, "result": true}
+INFO:root:MOPIDY tracklist_off > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY volume_set 10 > {"jsonrpc": "2.0", "id": 1, "result": true}
+INFO:root:MOPIDY tracklist_off > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY pause > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY tracklist_clear > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY new_playlist file:///opt/morphee/cache/58edefa4dbf4593e838f16dbcf99f4aaf5902348.mp3 > {"jsonrpc": "2.0", "id": 1, "result": [{"__model__": "TlTrack", "tlid": 9, "track": {"__model__": "Track", "uri": "file:///opt/morphee/cache/58edefa4dbf4593e838f16dbcf99f4aaf5902348.mp3", "name": "58edefa4dbf4593e838f16dbcf99f4aaf5902348.mp3", "length": 1671, "bitrate": 127988}}]}
+INFO:root:MOPIDY new_playlist set random false > {"jsonrpc": "2.0", "id": 1, "result": null}
+INFO:root:MOPIDY play > {"jsonrpc": "2.0", "id": 1, "result": null}

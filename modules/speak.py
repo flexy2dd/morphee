@@ -49,7 +49,7 @@ class speak():
     hashKey.update(str(voiceName + sentence).encode('utf-8'))
     fileKey = hashKey.hexdigest()
 
-    fileNameDetail = self.core.getRootPath() + "cache/" + fileKey + ".json"
+    fileNameDetail = self.core.getRootPath() + "speak/" + fileKey + ".json"
     if not os.path.isfile(fileNameDetail):
       if self.verbose:
         print("File " + fileNameDetail + " not already exist for sentence " + sentence + " and voice " + voiceName)
@@ -62,7 +62,7 @@ class speak():
       }))
       f.close()
 
-    fileName = self.core.getRootPath() + "cache/" + fileKey + ".mp3"    
+    fileName = self.core.getRootPath() + "speak/" + fileKey + ".mp3"    
     if os.path.isfile(fileName):
       if self.verbose:
         print("File " + fileName + " already exist for sentence " + sentence + " and voice " + voiceName)
@@ -97,7 +97,7 @@ class speak():
           print("Set speak volume " + str(self.volume) + " by value")
 
       
-      sUrl = 'file:///opt/morphee/cache/' + fileKey + '.mp3'
+      sUrl = 'file:///opt/morphee/speak/' + fileKey + '.mp3'
 
       oMopidy = mopidy.mopidy()
       oMopidy.verbose = self.verbose
