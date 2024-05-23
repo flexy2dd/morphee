@@ -1,0 +1,11 @@
+/var/log/morphee-manager.log
+/var/log/morphee-server.log
+/var/log/morphee-lights.log
+{
+	rotate 7
+	daily
+	compress
+	size 100k
+	nocreate
+	missingok
+}
