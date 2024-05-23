@@ -1,5 +1,6 @@
 import RPi.GPIO as GPIO
 import time
+import datetime
 import math
 import sys
 import threading
@@ -17,6 +18,7 @@ class rfid():
     self.reader = BasicMFRC522()
     self.lastId = None
     self.lastText = None
+    self.loopTimeSecond = 99
     
     self.changeCallback = None
     self.insertCallback = None
@@ -35,31 +37,37 @@ class rfid():
     self.reader.write(text)
 
   def loop(self):
-    try:
-      timeout = 1
-      idx = 0
-      id, text = self.reader.read_no_block(constant.SECTOR_1)
-      while not id and idx<timeout:
+    now = datetime.datetime.now()
+
+    #if now.second != self.loopTimeSecond and now.second in [0, 2, 4, 6, 8, 10, 12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,58]:
+    if now.second != self.loopTimeSecond and now.second in [0,4,8,12,16,20,24,28,32,36,40,44,48,52,58]:
+      self.loopTimeSecond = now.second
+
+      try:
+        timeout = 1
+        idx = 0
         id, text = self.reader.read_no_block(constant.SECTOR_1)
-        idx = idx + 0.100
-        time.sleep(0.01)
-
-      if self.lastId != id:
-          self.triggerChange(str(id), str(text), str(self.lastId), str(self.lastText))
-
-      if self.lastId is None and not id is None:
-          id, text = self.readSectors([constant.SECTOR_1, constant.SECTOR_2, constant.SECTOR_3, constant.SECTOR_4, constant.SECTOR_5])
-          self.triggerInsert(str(id), str(text))
-
-      if not self.lastId is None and id is None:
-          self.triggerRemove(str(self.lastId), str(self.lastText))
-
-      self.lastId = id
-      self.lastText = text
-
-    except:
-      print("Unexpected error:", sys.exc_info()[0])
-      raise
+        while not id and idx<timeout:
+          id, text = self.reader.read_no_block(constant.SECTOR_1)
+          idx = idx + 0.100
+          time.sleep(0.01)
+      
+        if self.lastId != id:
+            self.triggerChange(str(id), str(text), str(self.lastId), str(self.lastText))
+      
+        if self.lastId is None and not id is None:
+            id, text = self.readSectors([constant.SECTOR_1, constant.SECTOR_2, constant.SECTOR_3, constant.SECTOR_4, constant.SECTOR_5])
+            self.triggerInsert(str(id), str(text))
+      
+        if not self.lastId is None and id is None:
+            self.triggerRemove(str(self.lastId), str(self.lastText))
+      
+        self.lastId = id
+        self.lastText = text
+      
+      except:
+        print("Unexpected error:", sys.exc_info()[0])
+        pass
 
   def triggerChange(self, id, text, idOld, textOld):
     if not self.changeCallback is None:

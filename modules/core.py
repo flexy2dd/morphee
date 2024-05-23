@@ -27,6 +27,9 @@ class core():
     if self.verbose:
       print(message)
 
+  def getDebugLevelFromText(self, level):
+      return int(constant.DEBUG_LEVELS[level])
+
   def getFilePid(self):
     return '%s/../%s' % (os.path.dirname(__file__), constant.CORE_PID)
 
@@ -251,3 +254,51 @@ class core():
     oConf = self.getConf()
     return int(oConf.get('speak', 'volume', fallback='30'))
 
+  def setAnimBrightness(self, brightness):
+    if brightness>255:
+      brightness = 255
+
+    if brightness<0:
+      brightness = 0
+
+    if os.path.isfile(self.brightness):
+      oConf = configparser.ConfigParser()
+      oConf.read(self.confFile)
+
+      oConf.set('animation', 'brightness', str(brightness))
+    
+      with open(self.confFile, 'w') as configfile:
+        oConf.write(configfile)
+
+      return True
+
+    return False;
+
+  def getAnimBrightness(self):
+    oConf = self.getConf()
+    return int(oConf.get('animation', 'brightness', fallback='50'))
+
+  def setScreenContrast(self, contrast):
+
+    if contrast>255:
+      contrast = 255
+
+    if contrast<0:
+      contrast = 0
+
+    if os.path.isfile(self.confFile):
+      oConf = configparser.ConfigParser()
+      oConf.read(self.confFile)
+
+      oConf.set('screen', 'contrast', str(contrast))
+    
+      with open(self.confFile, 'w') as configfile:
+        oConf.write(configfile)
+
+      return True
+
+    return False;
+
+  def getScreenContrast(self):
+    oConf = self.getConf()
+    return int(oConf.get('screen', 'contrast', fallback='50'))

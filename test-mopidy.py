@@ -8,24 +8,38 @@ from modules import screen
 from modules import mopidy
 import RPi.GPIO as GPIO
 
-oScreen = screen.screen()
-oScreen.cls()
+oMopidy = mopidy.mopidy()
 
-result = {
-  'mode': 'once', 
-  'style': 'music', 
-  'url': '', 
-  'length': 155000, 
-  'position': 91555, 
-  'artist': 'Salebarbes', 
-  'album': 'À boire deboutte', 
-  'name': "Y a l'bon Dieu qui l'attend",
-  'id': '',
-  'volume': 75
-}
-oScreen.play(result)
-while(True):
-  time.sleep(0.001)
+#(self, uri, isOnce = True, isShuffle = False, isLoop = False):
+  
+oMopidy.create_playlist(
+  'subidy:album:59d8f838a9414b3a33f52b11f8634c46',
+  True,
+  True,
+  False
+)
+
+
+
+
+#oScreen = screen.screen()
+#oScreen.cls()
+#
+#result = {
+#  'mode': 'once', 
+#  'style': 'music', 
+#  'url': '', 
+#  'length': 155000, 
+#  'position': 91555, 
+#  'artist': 'Salebarbes', 
+#  'album': 'À boire deboutte', 
+#  'name': "Y a l'bon Dieu qui l'attend",
+#  'id': '',
+#  'volume': 75
+#}
+#oScreen.play(result)
+#while(True):
+#  time.sleep(0.001)
 
 #
 #resultOld = {

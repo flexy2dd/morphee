@@ -134,27 +134,69 @@
                   <div class="col-md-6">
                     <div class="form-group">
                       <label class="fw-700 fs-16 form-label">Style</label>
-                      <select class="form-select" id="btn-style" data-placeholder="Choisir un style" tabindex="1">
-                        <option value="zen">Zen</option>
-                        <option value="nature">Nature</option>
-                        <option value="music" selected="selected">Musique</option>
-                        <option value="relax">Relaxation</option>
-                        <option value="love">Amour</option>
-                      </select>
+                      <div class="col-12">
+                        <div class="form-group row">
+                          <label for="btn-style" class="col-sm-2 col-form-label">Prédéfini</label>
+                          <div class="col-sm-10">
+                            <select class="form-select" id="btn-style" data-placeholder="Choisir un style" tabindex="1">
+                              <option value="zen">Zen</option>
+                              <option value="nature">Nature</option>
+                              <option value="music" selected="selected">Musique</option>
+                              <option value="relax">Relaxation</option>
+                              <option value="love">Amour</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <div class="form-group row">
+                          <label for="btn-picto" class="col-sm-2 col-form-label">Surchargé</label>
+                          <div class="col-sm-10">
+                            <input type="text" class="form-control" id="btn-picto" placeholder="Picto">
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <!--/row-->
-                <!--/row-->
                 <div class="row">
                   <div class="col-md-6">
                     <div class="form-group">
                       <label class="fw-700 fs-16 form-label">Mode de lecture</label>
-                      <select class="form-select" id="btn-mode" data-placeholder="Choisir un mode de lecture" tabindex="1">
-                        <option value="once" selected="selected">Unique</option>
-                        <option value="loop">Infini</option>
-                        <option value="shuffle">Aléatoire</option>
-                      </select>
+
+                      <div class="col-12">
+                        <div class="form-group row">
+                          <label for="btn-mode-once" class="col-sm-2 col-form-label">Unique</label>
+                          <div class="col-sm-10">
+                            <button id="btn-mode-once" type="button" class="btn btn-sm btn-toggle btn-primary active btn-mode" data-bs-toggle="button" aria-pressed="true" autocomplete="off"><div class="handle"></div></button>
+                          </div>
+                        </div>
+                        <div class="form-group row">
+                          <label for="btn-mode-shuffle" class="col-sm-2 col-form-label">Aléatoire</label>
+                          <div class="col-sm-10">
+                            <button id="btn-mode-shuffle" type="button" class="btn btn-sm btn-toggle btn-primary btn-mode" data-bs-toggle="button" aria-pressed="true" autocomplete="off"><div class="handle"></div></button>
+                          </div>
+                        </div>
+                        <div class="form-group row">
+                          <label for="btn-mode-loop" class="col-sm-2 col-form-label">Boucle</label>
+                          <div class="col-sm-10">
+                            <button id="btn-mode-loop" type="button" class="btn btn-sm btn-toggle btn-primary btn-mode" data-bs-toggle="button" aria-pressed="true" autocomplete="off"><div class="handle"></div></button>
+                          </div>
+                        </div>
+                        <div class="form-group row">
+                          <label for="btn-keep" class="col-sm-2 col-form-label">Pistes à garder</label>
+                          <div class="col-sm-10">
+                            <input id="btn-keep" type="text" value="1" class="form-control" data-from="1" data-min="1" data-max="100">
+                          </div>
+                        </div>
+                        <div class="form-group row">
+                          <label for="btn-limit" class="col-sm-2 col-form-label">Temps limite (minutes)</label>
+                          <div class="col-sm-10">
+                            <input id="btn-limit" type="text" value="0" class="form-control" data-from="0" data-min="0" data-max="3600">
+                          </div>
+                        </div>
+                      </div>
+
                     </div>
                   </div>
                 </div>
@@ -182,7 +224,7 @@
                   <div class="col-md-6">
                     <div class="form-group">
                       <label class="fw-700 fs-16 form-label">Données sur la carte</label>
-                      <pre class="ace-editor" id="editorJSON" data-plugin="ace" data-mode="javascript" style="width: 100%;height: 300px;"></pre>          
+                      <pre class="ace-editor" id="editorJSON" data-plugin="ace" data-mode="javascript" style="width: 100%;height: 300px;"></pre>
                     </div>
                   </div>
                 </div>
@@ -231,8 +273,59 @@
   <script src="custom/socket.io/4.0.0/socket.io.js"></script>
   <script src="custom/mqtt/5.6.0/mqtt.js"></script>
   <script src="custom/jsoneditor-9.1.4/jsoneditor.min.js"></script>
+  <script src="assets/vendor_components/ion-rangeSlider/js/ion.rangeSlider.min.js"></script>
   <script>
+
     const zeroPad = (num, places) => String(num).padStart(places, '0')
+
+    var animations = ['none', 'sparklepulse']
+    var styles = ['zen', 'nature', 'music', 'relax', 'love']
+
+    var editor = new JSONEditor(
+      document.getElementById("editorJSON"),
+      {
+        mode: 'code',
+        sortObjectKeys: false,
+        escapeUnicode: false,
+        search: false,
+        enableTransform: false,
+        onValidationError: function (errors) {
+          if (errors.length>0) {
+            $("#btn-encode-card").addClass('disabled');
+          } else {
+            $("#btn-encode-card").removeClass('disabled');
+          }
+        }
+      }
+    )
+    editor.set({})
+
+    var UpdateEditor = function() {
+
+      sStyle = $('#btn-style').val();
+      if (!styles.includes(sStyle))
+        sStyle = 'music';
+
+      sAnimation = $('#btn-animation').val();
+      if (!animations.includes(sAnimation))
+        sAnimation = 'none';
+
+      sPicto = $('#btn-picto').val();
+
+      var jDatas = {
+        'url': $('#modipy-url').val(),
+        'once': switchIsOn('#btn-mode-once'),
+        'shuffle': switchIsOn('#btn-mode-shuffle'),
+        'loop': switchIsOn('#btn-mode-loop'),
+        'style': sStyle,
+        'picto': sPicto,
+        'keep': $('#btn-keep').val(),
+        'limit': $('#btn-limit').val(),
+        'animation': sAnimation
+      }
+      editor.set(jDatas)
+      return jDatas
+    };
 
     const options = {
       clean: true,
@@ -253,75 +346,96 @@
     })
 
     client.on('message', function (topic, message) {
-      // message is Buffer
-      console.log(topic)
+      console.log(topic + ' -> ' + message.toString())
       if (topic=='Morphee/carte/readed') {
         const payload = JSON.parse(message.toString());
+        console.log(payload)
         if (payload.readed) {
+
+          sStyle = payload.style;
+          if (!styles.includes(sStyle))
+            sStyle = 'music';
+
+          sAnimation = payload.animation;
+          if (!animations.includes(sAnimation))
+            sAnimation = 'none';
+
           $('#modipy-url').val(payload.url);
-          $('#btn-mode').val(payload.mode);
-          $('#btn-style').val(payload.style);
-          $('#btn-animation').val(payload.animation);
+          $('#btn-style').val(sStyle);
+          $('#btn-animation').val(sAnimation);
+          switchSet('#btn-mode-once', payload.once);
+          switchSet('#btn-mode-shuffle', payload.shuffle);
+          switchSet('#btn-mode-loop', payload.loop);
+          $("#btn-limit").data("ionRangeSlider").update({from:payload.limit})
+          $("#btn-keep").data("ionRangeSlider").update({from:payload.keep})
+          $("#btn-picto").val('')
+
+          UpdateEditor();
         }
       } else if (topic=='Morphee/carte/encoded') {
-        const payload = JSON.parse(message.toString());
+        $("#btn-encode-card").removeClass('disabled visually-hidden');
+        $("#btn-encode-spin").addClass('visually-hidden');
+        sPayload = message.toString().toLowerCase()
+        console.log(sPayload)
+        const payload = JSON.parse(sPayload);
         if (payload.encoded) {
           swal('La carte est encodée', 'Encodage de la carte réussi', "success")
         } else {
           swal("La carte n'est encodée", "L'encodage de la carte a échouée", "warning")
         }
-        $("#btn-encode-card").removeClass('disabled visually-hidden');
-        $("#btn-encode-spin").addClass('visually-hidden');
       }
       console.log(message.toString())
     })
 
     var socket = io.connect();
 
-    $( document ).ready(function() {
+    function switchIsOn(btn) {
+      if ($(btn).hasClass("active"))
+        return true
 
-      var UpdateEditor = function() {
-        var jDatas = {
-          'url': $('#modipy-url').val(),
-          'mode': $('#btn-mode').val(),
-          'style': $('#btn-style').val(),
-          'animation': $('#btn-animation').val()
-        }
-        editor.set(jDatas)
-        return jDatas
-      };                                   
+      return false;
+    }
+
+    function switchSet(btn, state) {
+      if (state) {
+        if (!switchIsOn(btn))
+          $(btn).addClass("active")
+      } else {
+        if (switchIsOn(btn))
+          $(btn).removeClass("active")
+      }
+    }
+
+    $( document ).ready(function() {
 
       $('#modipy-url').change(function(){
         UpdateEditor();
-      }); 
-      $('#btn-mode').change(function(){
+      });
+      $('#btn-picto').change(function(){
         UpdateEditor();
-      }); 
+      });
       $('#btn-style').change(function(){
         UpdateEditor();
-      }); 
+      });
       $('#btn-animation').change(function(){
         UpdateEditor();
-      }); 
+      });
 
-      var editor = new JSONEditor(
-        document.getElementById("editorJSON"),
-        {
-          mode: 'code',
-          sortObjectKeys: false,
-          escapeUnicode: false,
-          search: false,
-          enableTransform: false,
-          onValidationError: function (errors) {
-            if (errors.length>0) {
-              $("#btn-encode-card").addClass('disabled');
-            } else {
-              $("#btn-encode-card").removeClass('disabled');
-            }
-          }
-        }
-      )
-      editor.set({})
+      $("#btn-limit").ionRangeSlider({
+        onFinish: function (data) {
+          UpdateEditor();
+        },
+      })
+
+      $("#btn-keep").ionRangeSlider({
+        onFinish: function (data) {
+          UpdateEditor();
+        },
+      })
+
+      $('.btn-mode').click(function(){
+        UpdateEditor();
+      });
 
       $("#btn-read-card").on("click", function(event) {
         event.preventDefault();
@@ -357,11 +471,11 @@
         $("#btn-encode-card").removeClass('disabled ');
         $("#btn-encode-spin").addClass('visually-hidden');
       });
-      
+
       UpdateEditor();
 
     });
-      
+
   </script>
 
 </body>

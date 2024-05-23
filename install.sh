@@ -161,7 +161,7 @@ if confirm "Do you wish to continue?"; then
 
         newline
         echo "Add python dependencies..."
-        pip3 install luma.oled configparser python-dateutil simpleaudio python-socketio aiohttp aiodns rpi_ws281x adafruit-circuitpython-neopixel paho-mqtt elevenlabs Mopidy-ALSAMixer yt-dlp mfrc522-python jsonpath-ng
+        pip3 install luma.core luma.oled configparser python-dateutil simpleaudio python-socketio aiohttp aiodns rpi_ws281x adafruit-circuitpython-neopixel paho-mqtt elevenlabs Mopidy-ALSAMixer yt-dlp mfrc522-python jsonpath-ng Mopidy-Local
     fi
 
     newline

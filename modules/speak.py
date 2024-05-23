@@ -28,13 +28,18 @@ class speak():
     self.verbose = False
     self.logging = False
     self.volume = 0
-    logging_level: int = self.core.readConf("level", "logging", 20)
+    logging_level: int = self.core.getDebugLevelFromText(self.core.readConf("level", "logging", 'INFO'))
     logging.basicConfig(level=int(logging_level))
 
   def setVerbose(self, verbose):
     self.verbose = verbose
 
-  def say(self, sentence, volume = None):
+  def stop(self):
+    oMopidy = mopidy.mopidy()
+    oMopidy.stop()
+    oMopidy.tracklist_clear()
+
+  def say(self, sentence, volume = None, repeat = False):
 
     voiceName = self.core.readConf('voice', 'speak', 'Thomas')
     
@@ -103,6 +108,6 @@ class speak():
       oMopidy.verbose = self.verbose
       oMopidy.logging = self.logging
       oMopidy.volume_set(self.volume)
-      oMopidy.tracklist_repeat(False)
+      oMopidy.tracklist_repeat(repeat)
       oMopidy.new_playlist(sUrl)
 

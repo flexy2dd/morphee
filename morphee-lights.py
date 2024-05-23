@@ -57,9 +57,14 @@ scriptName = Path(__file__).stem
 # ===========================================================================
 # Logging
 # ===========================================================================
-logging_level: int = oCore.readConf("level", "logging", 20)
+logging_level: int = oCore.getDebugLevelFromText(oCore.readConf("level", "logging", 'INFO'))
 logging_path: str = oCore.readConf("path", "logging", '.')
-logging.basicConfig(filename=logging_path + '/' + scriptName + '.log', level=int(logging_level))
+logging.basicConfig(
+  filename=logging_path + '/' + scriptName + '.log', 
+  level=int(logging_level),
+  format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+  datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 # ===========================================================================
 # global

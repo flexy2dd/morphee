@@ -37,9 +37,14 @@ scriptName = Path(__file__).stem
 # ===========================================================================
 # Logging
 # ===========================================================================
-logging_level: int = oCore.readConf("level", "logging", 20)
+logging_level: int = oCore.getDebugLevelFromText(oCore.readConf("level", "logging", 'INFO'))
 logging_path: str = oCore.readConf("path", "logging", '.')
-logging.basicConfig(filename=logging_path + '/' + scriptName + '.log', level=int(logging_level))
+logging.basicConfig(
+  filename=logging_path + '/' + scriptName + '.log', 
+  level=int(logging_level),
+  format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+  datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 #sio = socketio.AsyncServer(logger=True, engineio_logger=True)
 sio = socketio.AsyncServer(cors_allowed_origins='*')
@@ -83,8 +88,20 @@ async def encode_card(sid, jDatas):
     await sio.emit('encode_ack', {'ack': False, 'title': 'Erreur', 'message': "L'animation doit etre definie"})
     return True
 
-  if jDatas['mode']=='' or jDatas==None:
-    await sio.emit('encode_ack', {'ack': False, 'title': 'Erreur', 'message': "Le mode doit etre defini"})
+  if jDatas['once']=='' or jDatas==None:
+    await sio.emit('encode_ack', {'ack': False, 'title': 'Erreur', 'message': "Le mode unique doit etre defini"})
+    return True
+
+  if jDatas['shuffle']=='' or jDatas==None:
+    await sio.emit('encode_ack', {'ack': False, 'title': 'Erreur', 'message': "Le mode aléatoire etre defini"})
+    return True
+
+  if jDatas['loop']=='' or jDatas==None:
+    await sio.emit('encode_ack', {'ack': False, 'title': 'Erreur', 'message': "Le mode boucle doit etre defini"})
+    return True
+
+  if jDatas['limit']=='' or jDatas==None:
+    await sio.emit('encode_ack', {'ack': False, 'title': 'Erreur', 'message': "La limite doit etre defini"})
     return True
 
   publish.single(

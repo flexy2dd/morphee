@@ -326,15 +326,116 @@ class menu():
         screen.draw.rectangle((left, top, screen.device.width - 1, screen.device.height - 1), outline="black", fill="black")
         screen.draw.text((left, top), str(self.genericPos), font=font, fill="white")
         self.oldPos = self.genericPos
-        oSpeak.say("Test volume...", self.genericPos)
+        oSpeak.say("Test volume...", self.genericPos, True)
         oCore.setSpeakVolume(self.genericPos)
+
+      if affCurrent>secondsWait:
+        oSpeak.stop()
+        return -1
+
+      if self.swithRelease==1:
+        self.swithRelease = 0
+        oCore.setSpeakVolume(self.genericPos)
+        oSpeak.stop()
+        return 0
+        break
+
+      screen.display()
+
+      time.sleep(0.10)
+
+  def setScreenContrast(self, screen):
+    screen.cls()
+    screen.setText(0, 10, "Contraste", 1)
+
+    affStart = time.time()
+    secondsWait = constant.MENU_WAIT_SECONDS
+    waitStep = screen.width / (float(secondsWait) * 1000)
+
+    oCore = core.core()
+
+    self.genericOptionMax = 255
+    self.genericOptionMin = 0
+    self.genericPos = oCore.getScreenContrast()
+    self.oldPos = self.genericPos
+
+    left = 0
+    top = 22
+    font = ImageFont.truetype('%s/../fonts/FreeSans.ttf' % os.path.dirname(__file__), 45)
+    screen.draw.rectangle((left, top, screen.device.width - 1, screen.device.height - 1), outline="black", fill="black")
+    screen.draw.text((left, top), str(self.genericPos), font=font, fill="white")
+
+    screen.display()
+
+    while(True):
+
+      affCurrent = time.time() - affStart
+      waitWidth = (affCurrent * waitStep) * 1000
+      screen.draw.rectangle((0, screen.height-1, screen.width, screen.height-1), 0, 0)
+
+      if self.oldPos != self.genericPos:
+        affStart = time.time()
+        screen.draw.rectangle((left, top, screen.device.width - 1, screen.device.height - 1), outline="black", fill="black")
+        screen.draw.text((left, top), str(self.genericPos), font=font, fill="white")
+        self.oldPos = self.genericPos
+        screen.contrast(self.genericPos)
+        oCore.setScreenContrast(self.genericPos)
 
       if affCurrent>secondsWait:
         return -1
 
       if self.swithRelease==1:
         self.swithRelease = 0
-        oCore.setSpeakVolume(self.genericPos)
+        oCore.setScreenContrast(self.genericPos)
+        return 0
+        break
+
+      screen.display()
+
+      time.sleep(0.10)
+
+  def setAnimBrightness(self, screen):
+    screen.cls()
+    screen.setText(0, 10, "Luminosité", 1)
+
+    affStart = time.time()
+    secondsWait = constant.MENU_WAIT_SECONDS
+    waitStep = screen.width / (float(secondsWait) * 1000)
+
+    oCore = core.core()
+
+    self.genericOptionMax = 100
+    self.genericOptionMin = 0
+    self.genericPos = oCore.getAnimBrightness()
+    self.oldPos = self.genericPos
+
+    left = 0
+    top = 22
+    font = ImageFont.truetype('%s/../fonts/FreeSans.ttf' % os.path.dirname(__file__), 45)
+    screen.draw.rectangle((left, top, screen.device.width - 1, screen.device.height - 1), outline="black", fill="black")
+    screen.draw.text((left, top), str(self.genericPos), font=font, fill="white")
+
+    screen.display()
+
+    while(True):
+
+      affCurrent = time.time() - affStart
+      waitWidth = (affCurrent * waitStep) * 1000
+      screen.draw.rectangle((0, screen.height-1, screen.width, screen.height-1), 0, 0)
+
+      if self.oldPos != self.genericPos:
+        affStart = time.time()
+        screen.draw.rectangle((left, top, screen.device.width - 1, screen.device.height - 1), outline="black", fill="black")
+        screen.draw.text((left, top), str(self.genericPos), font=font, fill="white")
+        self.oldPos = self.genericPos
+        oCore.setAnimBrightness(self.genericPos)
+
+      if affCurrent>secondsWait:
+        return -1
+
+      if self.swithRelease==1:
+        self.swithRelease = 0
+        oCore.setAnimBrightness(self.genericPos)
         return 0
         break
 
