@@ -48,6 +48,12 @@ class rotary():
     if 'rotate_callback' in params:
       self.rotateCallback = params['rotate_callback']
 
+    gpioMode = GPIO.getmode()
+    if gpioMode==GPIO.BOARD:
+      print('gpioMode BOARD')
+    else:
+      print('gpioMode BCM')
+  
   def triggerDisable(self):
     self.trigger = False
 
@@ -55,15 +61,17 @@ class rotary():
     self.trigger = True
 
   def triggerRotateClockwise(self):
+    pprint('rotate Clockwise')
     if not self.rotateCallback is None and self.trigger:
-      pprint('rotate Clockwise')
       self.triggerRotate('left')
 
   def triggerRotate(self, status):
+    pprint('rotate Rotate')
     if not self.rotateCallback is None and self.trigger:
       self.rotateCallback(status)
 
   def triggerSwitch(self, status):
+    pprint('rotate Click')
     if not self.switchCallback is None and self.trigger:
       self.switchCallback(status)
 
@@ -97,6 +105,7 @@ class rotary():
 
   def rotarySwitchCall(self, channel):
     state = GPIO.input(self.pinSW)
+    pprint('rotate state ' + str(state))
     if state == 0:
         if self.SWPrev == 1:
           self.SWPrev = 0

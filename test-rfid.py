@@ -1,15 +1,28 @@
 #!/usr/bin/env python
 
 import RPi.GPIO as GPIO
+import board
 from modules.mfrc522.MFRC522 import MFRC522
 from modules.mfrc522.SimpleMFRC522 import SimpleMFRC522
 from modules.mfrc522.BasicMFRC522 import BasicMFRC522
 
-reader = SimpleMFRC522()
+gpioMode = GPIO.getmode()
+print('gpioMode ' + str(gpioMode))
+print('gpioMode BOARD ' + str(GPIO.BOARD))
+print('gpioMode BCM ' + str(GPIO.BCM))
+
+GPIO.cleanup()
+GPIO.setwarnings(False)
+reader = BasicMFRC522()
+
+gpioMode = GPIO.getmode()
+print('gpioMode ' + str(gpioMode))
+print('gpioMode BOARD ' + str(GPIO.BOARD))
+print('gpioMode BCM ' + str(GPIO.BCM))
+
 try:
-        id, text = reader.read()
+        id= reader.read_id()
         print(id)
-        print(text)
 finally:
         GPIO.cleanup()
 

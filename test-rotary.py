@@ -4,6 +4,7 @@ import RPi.GPIO as GPIO
 from modules import rotary
 from modules import constant
 
+gpioMode = GPIO.getmode()
 GPIO.setmode(GPIO.BOARD)
 #GPIO.setmode(GPIO.BCM)
  

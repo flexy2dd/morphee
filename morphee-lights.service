@@ -1,6 +1,7 @@
 [Unit]
 Description=Morphee lights manager
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 ExecStart=/usr/bin/python3 /opt/morphee/morphee-lights.py

@@ -236,6 +236,29 @@ class screen():
       
       self.display()
 
+  def waitPlay(self, oCore, reset = False, title = ''):
+    now = datetime.datetime.now()
+    second = now.second
+    
+    if reset:
+      self.waitSecond = 99
+      second = 0
+
+    if second != self.waitSecond or reset:
+      maxWait = 30
+      delta = int(oCore.getModeDelta())
+      step = int(maxWait - delta)
+
+      print('delta ' + str(delta))
+      print('step ' + str(step))
+
+      self.countdown(step, "hourglass-half", "")
+      
+      if step<=0:
+        return True
+
+    return False
+
   def wait(self, reset = False, title = ''):
 
     now = datetime.datetime.now()
@@ -248,7 +271,7 @@ class screen():
     if second != self.waitSecond and second in [0, 10, 20, 30, 40, 50] or reset:
 
       if tools.isEmpty(title):
-      
+
         self.picto("hourglass-half")
       
       else:

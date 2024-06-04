@@ -3,12 +3,13 @@ import os
 import time
 import hashlib
 import string
-import datetime
 import pprint
 import RPi.GPIO as GPIO
 import glob
 import configparser
 import random
+from datetime import datetime
+from pathlib import Path
 from modules import constant
 from os import listdir
 from os.path import isfile, join
@@ -19,9 +20,13 @@ from os.path import isfile, join
 
 class core():
 
-  def __init__(self):
+  def __init__(self, scriptName):
+    self.scriptName = scriptName
     self.confFile = constant.CORE_CONF
     self.verbose = False
+    self.mode = constant.STATE_MODE_STARTING
+    self.modeUpdated = datetime.now()
+    self.mqttClientId = f"mqtt-{self.scriptName}-{random.randint(0, 1000)}"
     
   def debug(self, message):
     if self.verbose:
@@ -29,6 +34,24 @@ class core():
 
   def getDebugLevelFromText(self, level):
       return int(constant.DEBUG_LEVELS[level])
+
+  def getModeDelta(self):
+    now = datetime.now()
+    
+    delta = now - self.modeUpdated
+
+    return delta.total_seconds()
+
+  def setMode(self, mode):
+    if self.verbose:
+      print('set mode to ' + mode)
+
+    self.modeUpdated = datetime.now()
+
+    self.mode = mode
+
+  def getMode(self):
+    return self.mode
 
   def getFilePid(self):
     return '%s/../%s' % (os.path.dirname(__file__), constant.CORE_PID)
@@ -70,76 +93,6 @@ class core():
   def encodeCard(self, url):
     return false
 
-#  def getRemainingSeconds(self):
-#    nowTime = time.mktime(datetime.datetime.now().replace(microsecond=0).timetuple())
-#    targetTime = nowTime
-#
-#    if os.path.isfile(constant.CORE_PID):
-#      f = open(constant.CORE_PID, "r")
-#      targetTime = f.read()
-#
-#    targetTime = datetime.datetime.fromtimestamp(float(targetTime)) 
-#    nowTime = datetime.datetime.fromtimestamp(float(nowTime))
-#    
-#    if targetTime < nowTime:
-#      return 0
-#
-#    timeDelta = targetTime - nowTime
-#
-#    return timeDelta.total_seconds()
-#
-#  def getRemainingTime(self, bIncludeSeconds = False):
-#    seconds = self.getRemainingSeconds()
-#
-#    hours = seconds // (60*60)
-#    seconds %= (60*60)
-#    minutes = seconds // 60
-#    seconds %= 60
-#
-#    if bIncludeSeconds:
-#      return "%02i:%02i:%02i" % (hours, minutes, seconds)
-#      
-#    return "%02i:%02i" % (hours, minutes)
-#
-#  def setRain(self, rain):
-#    if os.path.isfile(self.confFile):
-#      ambiance = configparser.ConfigParser()
-#      ambiance.read(self.confFile)
-#
-#      if int(rain) in [constant.RAIN_LEVEL_NONE, constant.RAIN_LEVEL_LIGHT, constant.RAIN_LEVEL_MODERATE, constant.RAIN_LEVEL_HEAVY]:
-#        ambiance.set('general', 'rain', str(rain))
-#
-#        with open(self.confFile, 'w') as configfile:
-#          ambiance.write(configfile)
-#
-#        return True
-#
-#    return False;
-#
-#  def getRain(self):
-#    ambiance = self.getConf()
-#    return int(ambiance.get('general', 'rain', fallback=constant.RAIN_LEVEL_NONE))
-#
-#  def setThunder(self, thunderstorm):
-#    if os.path.isfile(self.confFile):
-#      ambiance = configparser.ConfigParser()
-#      ambiance.read(self.confFile)
-#
-#      if int(thunderstorm) in [constant.THUNDERSTORM_LEVEL_NONE, constant.THUNDERSTORM_LEVEL_LIGHT, constant.THUNDERSTORM_LEVEL_MODERATE, constant.THUNDERSTORM_LEVEL_HEAVY]:
-#        ambiance.set('general', 'thunder', str(thunderstorm))
-#
-#        with open(self.confFile, 'w') as configfile:
-#          ambiance.write(configfile)
-#
-#        return True
-#
-#    return False;
-#
-#  def getThunder(self):
-#    ambiance = self.getConf()
-#    return int(ambiance.get('general', 'thunder', fallback=constant.THUNDERSTORM_LEVEL_NONE))
-#
-
   def setLight(self, light):
     if os.path.isfile(self.confFile):
       oConf = configparser.ConfigParser()
@@ -158,32 +111,6 @@ class core():
   def getLight(self):
     oConf = self.getConf()
     return int(oConf.get('general', 'light', fallback=constant.LIGHT_ON))
-
-  def setMode(self, mode):
-    if os.path.isfile(self.confFile):
-      oConf = configparser.ConfigParser()
-      oConf.read(self.confFile)
-
-      oConf.set('general', 'mode', str(isfile))
-    
-      with open(self.confFile, 'w') as configfile:
-        oConf.write(configfile)
-
-      return True
-
-    return False;
-
-  def getMode(self):
-    mode = constant.STATE_MODE_REGULAR
-
-    if os.path.isfile(self.confFile):
-      oConf = configparser.ConfigParser()
-      oConf.read(self.confFile)
-
-      if oConf.has_option('general', 'mode'):
-        mode = oConf.get('general', 'mode')
-  
-    return mode
 
   def setGeneralVolume(self, volume):
     if os.path.isfile(self.confFile):

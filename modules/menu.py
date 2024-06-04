@@ -11,9 +11,21 @@ from pprint import pprint
 
 class menu():
 
-  def __init__(self):
+  def __init__(self, **params):
     self.swithRelease = 0
     self.genericOptionStep = 1
+    self.core = None
+    self.logging = False
+    self.verbose = False
+
+    if 'core' in params:
+      self.core = params['core']
+
+    if 'logging' in params:
+      self.logging = params['logging']
+    else:
+      logging_level: int = self.core.getDebugLevelFromText(self.core.readConf("level", "logging", 'INFO'))
+      logging.basicConfig(level=int(logging_level))
   
   # This function displays the appropriate menu and returns the option selected
   def runmenu(self, screen, rotary, menu, parent):
@@ -194,16 +206,14 @@ class menu():
     screen.setText(0, 10, "Lumières", 1)
     screen.display()
 
-    oCore = core.core()
-
     affStart = time.time()
     secondsWait = constant.MENU_WAIT_SECONDS
     waitStep = screen.width / (float(secondsWait) * 1000)
 
     self.genericOptionMax = 1
     self.genericOptionMin = 0
-    self.genericPos = oCore.getLight()
-    self.oldPos = oCore.getLight()
+    self.genericPos = self.core.getLight()
+    self.oldPos = self.core.getLight()
     
     left = 40
     top = 22
@@ -224,14 +234,14 @@ class menu():
         screen.draw.rectangle((left, top, left+35, top+35), outline="white", fill="white")
         screen.draw.bitmap((left, top), logoLight, fill="black")
         self.oldPos = self.genericPos
-        oCore.setLight(self.genericPos)
+        self.core.setLight(self.genericPos)
 
       if affCurrent>secondsWait:
         return -1
 
       if self.swithRelease==1:
         self.swithRelease = 0
-        oCore.setLight(self.genericPos)
+        self.core.setLight(self.genericPos)
         return 0
         break
 
@@ -247,11 +257,9 @@ class menu():
     secondsWait = constant.MENU_WAIT_SECONDS
     waitStep = screen.width / (float(secondsWait) * 1000)
 
-    oCore = core.core()
-
     self.genericOptionMax = 100
     self.genericOptionMin = 0
-    self.genericPos = oCore.getGeneralVolume()
+    self.genericPos = self.core.getGeneralVolume()
     self.oldPos = self.genericPos
 
     left = 0
@@ -274,14 +282,14 @@ class menu():
         screen.draw.text((left, top), str(self.genericPos), font=font, fill="white")
         self.oldPos = self.genericPos
 
-        oCore.setGeneralVolume(self.genericPos)
+        self.core.setGeneralVolume(self.genericPos)
 
       if affCurrent>secondsWait:
         return -1
 
       if self.swithRelease==1:
         self.swithRelease = 0
-        oCore.setGeneralVolume(self.genericPos)
+        self.core.setGeneralVolume(self.genericPos)
         return 0
         break
 
@@ -297,14 +305,12 @@ class menu():
     secondsWait = constant.MENU_WAIT_SECONDS
     waitStep = screen.width / (float(secondsWait) * 1000)
 
-    oCore = core.core()
-
     oSpeak = speak.speak()
     oSpeak.verbose = True
 
     self.genericOptionMax = 100
     self.genericOptionMin = 0
-    self.genericPos = oCore.getSpeakVolume()
+    self.genericPos = self.core.getSpeakVolume()
     self.oldPos = self.genericPos
 
     left = 0
@@ -327,7 +333,7 @@ class menu():
         screen.draw.text((left, top), str(self.genericPos), font=font, fill="white")
         self.oldPos = self.genericPos
         oSpeak.say("Test volume...", self.genericPos, True)
-        oCore.setSpeakVolume(self.genericPos)
+        self.core.setSpeakVolume(self.genericPos)
 
       if affCurrent>secondsWait:
         oSpeak.stop()
@@ -335,7 +341,7 @@ class menu():
 
       if self.swithRelease==1:
         self.swithRelease = 0
-        oCore.setSpeakVolume(self.genericPos)
+        self.core.setSpeakVolume(self.genericPos)
         oSpeak.stop()
         return 0
         break
@@ -352,11 +358,9 @@ class menu():
     secondsWait = constant.MENU_WAIT_SECONDS
     waitStep = screen.width / (float(secondsWait) * 1000)
 
-    oCore = core.core()
-
     self.genericOptionMax = 255
     self.genericOptionMin = 0
-    self.genericPos = oCore.getScreenContrast()
+    self.genericPos = self.core.getScreenContrast()
     self.oldPos = self.genericPos
 
     left = 0
@@ -379,14 +383,14 @@ class menu():
         screen.draw.text((left, top), str(self.genericPos), font=font, fill="white")
         self.oldPos = self.genericPos
         screen.contrast(self.genericPos)
-        oCore.setScreenContrast(self.genericPos)
+        self.core.setScreenContrast(self.genericPos)
 
       if affCurrent>secondsWait:
         return -1
 
       if self.swithRelease==1:
         self.swithRelease = 0
-        oCore.setScreenContrast(self.genericPos)
+        self.core.setScreenContrast(self.genericPos)
         return 0
         break
 
@@ -402,11 +406,9 @@ class menu():
     secondsWait = constant.MENU_WAIT_SECONDS
     waitStep = screen.width / (float(secondsWait) * 1000)
 
-    oCore = core.core()
-
     self.genericOptionMax = 100
     self.genericOptionMin = 0
-    self.genericPos = oCore.getAnimBrightness()
+    self.genericPos = self.core.getAnimBrightness()
     self.oldPos = self.genericPos
 
     left = 0
@@ -428,14 +430,14 @@ class menu():
         screen.draw.rectangle((left, top, screen.device.width - 1, screen.device.height - 1), outline="black", fill="black")
         screen.draw.text((left, top), str(self.genericPos), font=font, fill="white")
         self.oldPos = self.genericPos
-        oCore.setAnimBrightness(self.genericPos)
+        self.core.setAnimBrightness(self.genericPos)
 
       if affCurrent>secondsWait:
         return -1
 
       if self.swithRelease==1:
         self.swithRelease = 0
-        oCore.setAnimBrightness(self.genericPos)
+        self.core.setAnimBrightness(self.genericPos)
         return 0
         break
 

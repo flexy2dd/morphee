@@ -23,21 +23,31 @@ from modules import mopidy
 
 class speak():
 
-  def __init__(self):
-    self.core = core.core()
+  def __init__(self, **params):
+    self.core = None
+    self.mopidy = None
     self.verbose = False
     self.logging = False
     self.volume = 0
-    logging_level: int = self.core.getDebugLevelFromText(self.core.readConf("level", "logging", 'INFO'))
-    logging.basicConfig(level=int(logging_level))
+
+    if 'core' in params:
+      self.core = params['core']
+
+    if 'mopidy' in params:
+      self.mopidy = params['mopidy']
+
+    if 'logging' in params:
+      self.logging = params['logging']
+    else:
+      logging_level: int = self.core.getDebugLevelFromText(self.core.readConf("level", "logging", 'INFO'))
+      logging.basicConfig(level=int(logging_level))
 
   def setVerbose(self, verbose):
     self.verbose = verbose
 
   def stop(self):
-    oMopidy = mopidy.mopidy()
-    oMopidy.stop()
-    oMopidy.tracklist_clear()
+    self.mopidy.stop()
+    self.mopidy.tracklist_clear()
 
   def say(self, sentence, volume = None, repeat = False):
 
@@ -104,10 +114,7 @@ class speak():
       
       sUrl = 'file:///opt/morphee/speak/' + fileKey + '.mp3'
 
-      oMopidy = mopidy.mopidy()
-      oMopidy.verbose = self.verbose
-      oMopidy.logging = self.logging
-      oMopidy.volume_set(self.volume)
-      oMopidy.tracklist_repeat(repeat)
-      oMopidy.new_playlist(sUrl)
+      self.mopidy.volume_set(self.volume)
+      self.mopidy.tracklist_repeat(repeat)
+      self.mopidy.new_playlist(sUrl)
 

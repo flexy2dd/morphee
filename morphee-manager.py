@@ -17,7 +17,6 @@ import paho.mqtt.client as mqtt
 import paho.mqtt.publish as publish
 import threading
 from pathlib import Path
-
 from PIL import ImageFont, ImageDraw, Image
 from luma.core.render import canvas
 
@@ -66,22 +65,14 @@ menu_data = {
   ]
 }
 
-currentMode = constant.STATE_MODE_STARTING
-
-currentMopidyStatus = ''
-
-mopidyCurrentTrack = {
-  'mode': constant.MODE_ONCE,
-  'style': constant.STYLE_MUSIC,
-  'url': '',
-  'length': 0,
-  'position': 0,
-  'artist': '',
-  'album': '',
-  'name': '',
-  'id': '',
-  'volume': 0
-}
+gpioMode = GPIO.getmode()
+if gpioMode==GPIO.BOARD:
+  print('gpioMode BOARD')
+else:
+  print('gpioMode BCM')
+#print('gpioMode ' + str(gpioMode))
+#print('gpioMode BOARD ' + str(GPIO.BOARD))
+#print('gpioMode BCM ' + str(GPIO.BCM))
 
 # ===========================================================================
 # Param
@@ -95,9 +86,12 @@ args = parser.parse_args()
 # ===========================================================================
 # Import config
 # ===========================================================================
-oCore = core.core()
 #oCore.readGeneralConf(sKey, mDefault)
 scriptName = Path(__file__).stem
+oCore = core.core(scriptName)
+pprint.pprint(args.verbose)
+oCore.verbose = args.verbose
+oCore.setMode(constant.STATE_MODE_STARTING)
 
 # ===========================================================================
 # Logging
@@ -125,33 +119,23 @@ oScreen.println("ip: %s" % network.get_lan_ip())
 # ===========================================================================
 
 def on_disconnect(client, userdata, disconnect_flags, reason_code, properties):
-  if args.verbose:
-    print("MQTT Disconnect " + reason_code)
-
-  logging.warning("MQTT Disconnect " + reason_code)
+  logging.debug("MQTT Disconnect " + str(reason_code))
+  #if args.verbose:
+  #  print("MQTT Disconnect " + str(reason_code))
 
 def on_connect(client, userdata, flags, reason_code, properties):
-  if args.verbose:
-    print("MQTT Connection Success")
-    print("MQTT Subscribe")
-
-  logging.info("Connection Success")
-  logging.info("MQTT Subscribe")
+  logging.debug("Connection Success")
+  logging.debug("MQTT Subscribe")
 
   client.subscribe(constant.MQTT_TOPIC_CARTE_ENCODE)
   client.subscribe(constant.MQTT_TOPIC_CARTE_READ)
   client.subscribe(constant.MQTT_TOPIC_MOPIDY_VOL)
-  #client.subscribe(constant.MQTT_TOPIC_MOPIDY_PLSTATE)
-  #client.subscribe(constant.MQTT_TOPIC_MOPIDY_TRKLIST)
-  #client.subscribe(constant.MQTT_TOPIC_MOPIDY_TRKINDEX)
 
-  if reason_code == 0:
-    logging.info("MQTT Connection Success")
-  else:
+  if reason_code != 0:
     logging.critical("Failed to connect, return code %d\n", reason_code)
 
 def on_message(client, userdata, msg):
-  global currentMode, mopidyCurrentTrack
+  global mopidyCurrentTrack
 
   if args.verbose:
     print(f"MQTT onMessage received `{msg.payload.decode()}` from `{msg.topic}` topic")
@@ -164,8 +148,10 @@ def on_message(client, userdata, msg):
       print("Set mode to read")
 
     logging.info('Set mode to read')
+    
+    oRfid.setTriggerOff()
 
-    currentMode = constant.STATE_MODE_READ
+    oCore.setMode(constant.STATE_MODE_READ)
 
     payload = json.loads(msg.payload.decode("utf-8"))
 
@@ -187,7 +173,7 @@ def on_message(client, userdata, msg):
       }),
       hostname=str(constant.MQTT_HOST),
       port=int(constant.MQTT_PORT),
-      client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
+      client_id=oCore.mqttClientId
     )
 
     oSpeak.say("Veuillez insérer la carte dans le lecteur...")
@@ -205,7 +191,7 @@ def on_message(client, userdata, msg):
         print('Try read...')
 
       oScreen.picto("cogs")
-      id, text = oRfid.readSectors([constant.SECTOR_1, constant.SECTOR_2, constant.SECTOR_3, constant.SECTOR_4, constant.SECTOR_5])
+      id, text = oRfid.readSectors(constant.SECTORS)
 
       if args.verbose:
         print('id is ' + str(id))
@@ -243,7 +229,7 @@ def on_message(client, userdata, msg):
         msgs,
         hostname=str(constant.MQTT_HOST),
         port=int(constant.MQTT_PORT),
-        client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
+        client_id=oCore.mqttClientId
       )
       time.sleep(0.5)
 
@@ -260,7 +246,7 @@ def on_message(client, userdata, msg):
         }),
         hostname=str(constant.MQTT_HOST),
         port=int(constant.MQTT_PORT),
-        client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
+        client_id=oCore.mqttClientId
       )
 
       oSpeak.say("La carte est lu !")
@@ -280,7 +266,7 @@ def on_message(client, userdata, msg):
         msgs,
         hostname=str(constant.MQTT_HOST),
         port=int(constant.MQTT_PORT),
-        client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
+        client_id=oCore.mqttClientId
       )
 
       publish.single(
@@ -296,7 +282,7 @@ def on_message(client, userdata, msg):
         }),
         hostname=str(constant.MQTT_HOST),
         port=int(constant.MQTT_PORT),
-        client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
+        client_id=oCore.mqttClientId
       )
 
       oSpeak.say("La carte n'a pas pu être lue !")
@@ -312,21 +298,24 @@ def on_message(client, userdata, msg):
       json.dumps({}),
       hostname=str(constant.MQTT_HOST),
       port=int(constant.MQTT_PORT),
-      client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
+      client_id=oCore.mqttClientId
     )
 
+    oRfid.setTriggerOn()
     oScreen.cls('read');
     oScreen.clock(True);
-    currentMode = constant.STATE_MODE_REGULAR
+    oCore.setMode(constant.STATE_MODE_REGULAR)
 
   elif msg.topic == constant.MQTT_TOPIC_CARTE_ENCODE:
+
+    oRfid.setTriggerOff()
 
     if args.verbose:
       print("Set mode to encode")
 
     logging.info('Set mode to encode')
 
-    currentMode = constant.STATE_MODE_ENCODE
+    oCore.setMode(constant.STATE_MODE_ENCODE)
 
     payload = json.loads(msg.payload.decode("utf-8"))
 
@@ -348,7 +337,7 @@ def on_message(client, userdata, msg):
       }),
       hostname=str(constant.MQTT_HOST),
       port=int(constant.MQTT_PORT),
-      client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
+      client_id=oCore.mqttClientId
     )
 
     oSpeak.say("Veuillez insérer la carte dans le lecteur...")
@@ -426,8 +415,9 @@ def on_message(client, userdata, msg):
       if args.verbose:
         print('Try encode with ' + textEncode)
 
+      time.sleep(1)
       oScreen.picto("cogs")
-      id, text = oRfid.writeSectors(textEncode, [constant.SECTOR_1, constant.SECTOR_2, constant.SECTOR_3, constant.SECTOR_4, constant.SECTOR_5])
+      id, text = oRfid.writeSectors(textEncode, constant.SECTORS)
 
       if id:
         encoded = True
@@ -447,7 +437,7 @@ def on_message(client, userdata, msg):
         msgs,
         hostname=str(constant.MQTT_HOST),
         port=int(constant.MQTT_PORT),
-        client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
+        client_id=oCore.mqttClientId
       )
       time.sleep(0.5)
 
@@ -464,7 +454,7 @@ def on_message(client, userdata, msg):
         }),
         hostname=str(constant.MQTT_HOST),
         port=int(constant.MQTT_PORT),
-        client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
+        client_id=oCore.mqttClientId
       )
 
       oSpeak.say("La carte est encodée !")
@@ -484,7 +474,7 @@ def on_message(client, userdata, msg):
         msgs,
         hostname=str(constant.MQTT_HOST),
         port=int(constant.MQTT_PORT),
-        client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
+        client_id=oCore.mqttClientId
       )
 
       publish.single(
@@ -500,7 +490,7 @@ def on_message(client, userdata, msg):
         }),
         hostname=str(constant.MQTT_HOST),
         port=int(constant.MQTT_PORT),
-        client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
+        client_id=oCore.mqttClientId
       )
 
       oSpeak.say("La carte n'a pas pu être encodée !")
@@ -516,47 +506,22 @@ def on_message(client, userdata, msg):
       json.dumps({}),
       hostname=str(constant.MQTT_HOST),
       port=int(constant.MQTT_PORT),
-      client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
+      client_id=oCore.mqttClientId
     )
+    
+    oRfid.setTriggerOn()
 
     oScreen.cls('write');
     oScreen.clock(True);
-    currentMode = constant.STATE_MODE_REGULAR
+    oCore.setMode(constant.STATE_MODE_REGULAR)
 
   elif msg.topic == constant.MQTT_TOPIC_MOPIDY_VOL:
     payload = msg.payload.decode('utf-8')
     mopidyCurrentTrack['volume'] = int(payload)
 
-#  elif msg.topic == constant.MQTT_TOPIC_MOPIDY_PLSTATE:
-# 
-#    payload = msg.payload.decode('utf-8')
-#    if payload=='playing':
-#
-#      if tools.isEmpty(mopidyCurrentTrack['id']):
-#        result = oMopidy.get_playing_details()
-#        sUrl = result['url']
-#        #mopidyCurrentTrack = {**mopidyCurrentTrack, **result}
-#        h = hashlib.new('sha1')
-#        h.update(sUrl.encode())
-#        mopidyCurrentTrack['id'] = h.hexdigest()
-#
-#      volume = oCore.getSpecificVolume(mopidyCurrentTrack['id'])
-#      oMopidy.volume_set(volume)
-#
-#      currentMode = constant.STATE_MODE_PLAY
-#
-#    if payload=='paused' or payload=='stop' or payload=='stopped':
-#      oMopidy.pause()
-#      oMopidy.tracklist_clear()
-#      currentMode = constant.STATE_MODE_REGULAR
-#      oMqttClient.publish(constant.MQTT_TOPIC_ANIMATION_STOP,
-#        json.dumps({})
-#      )
-#      oScreen.clock(True)
-
 # connect to mqtt server
 oScreen.println("Connect to MQTT on " + constant.MQTT_HOST + ':' + str(constant.MQTT_PORT))
-oMqttClient = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, f"mqtt-{scriptName}-{random.randint(0, 1000)}")
+oMqttClient = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, oCore.mqttClientId)
 oMqttClient.on_connect = on_connect
 oMqttClient.on_message = on_message
 oMqttClient.on_disconnect = on_disconnect
@@ -586,145 +551,136 @@ publish.single(
   }),
   hostname=str(constant.MQTT_HOST),
   port=int(constant.MQTT_PORT),
-  client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
+  client_id=oCore.mqttClientId
 )
 
 # ===========================================================================
 # Mopidy
 # ===========================================================================
 oScreen.println("Init mopidy")
-oMopidy = mopidy.mopidy()
-oMopidy.verbose = args.verbose
-oMopidy.logging = logging
 
+def mopidyStatusChange(newStatus, oldStatus):
+
+  if args.verbose:
+    print("Mopidy state change " + oldStatus + " to " + newStatus)
+
+  logging.info("Mopidy state change " + oldStatus + " to " + newStatus)
+
+  if oCore.getMode() == constant.STATE_MODE_STARTING:
+    if args.verbose:
+      print("Mopidy is in starting mode bypass change status")
+
+    return True
+
+  if newStatus=='playing':
+
+    mopidyCurrentTrack = oMopidy.getCurrentTrack()
+    volume = oCore.getSpecificVolume(mopidyCurrentTrack['id'])
+    oMopidy.volume_set(volume)
+
+    oCore.setMode(constant.STATE_MODE_PLAY)
+    #oScreen.play(currentTrack, True)
+
+  if newStatus in ['paused', 'stop', 'stopped']:
+    oMopidy.stop()
+    oMopidy.tracklist_clear()
+    oCore.setMode(constant.STATE_MODE_REGULAR)
+    oMqttClient.publish(constant.MQTT_TOPIC_ANIMATION_STOP,
+      json.dumps({})
+    )
+    oScreen.clock(True)
+    
+oMopidy = mopidy.mopidy(
+  core = oCore,
+  logging = logging,
+  change_callback=mopidyStatusChange
+)
+oMopidy.verbose = args.verbose
 oMopidy.stop()
 oMopidy.tracklist_clear()
-
-def mopidyGetPlayingDetails():
-  global currentMode, mopidyCurrentTrack
-  if currentMode == constant.STATE_MODE_PLAY:
-    result = oMopidy.get_playing_details()
-
-    mopidyCurrentTrack = {**mopidyCurrentTrack, **result}
-
-    publish.single(
-      constant.MQTT_TOPIC_MOPIDY_TRKINFOS,
-      json.dumps(mopidyCurrentTrack),
-      hostname=str(constant.MQTT_HOST),
-      port=int(constant.MQTT_PORT),
-      client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
-    )
-  return True
-
-oScreen.println("Start mopidy detail timer")
-timerMopidyDetails = tools.PeriodicTimer(2, mopidyGetPlayingDetails)
-timerMopidyDetails.start()
-
-def mopidyGetPlayingStatus():
-  global currentMode, currentMopidyStatus
-
-  if currentMode == constant.STATE_MODE_STARTING:
-    return True
-        
-  #'playing', 'paused', 'stop', 'stopped'
-  result = oMopidy.playback_get_state()
-  if currentMopidyStatus != result:
-
-    logging.info("Mopidy state change " + currentMopidyStatus + " to " + result)
-
-    currentMopidyStatus = result
-
-    if currentMopidyStatus=='playing':
-
-      if tools.isEmpty(mopidyCurrentTrack['id']):
-        result = oMopidy.get_playing_details()
-        sUrl = result['url']
-
-        h = hashlib.new('sha1')
-        h.update(sUrl.encode())
-        mopidyCurrentTrack['id'] = h.hexdigest()
-
-      volume = oCore.getSpecificVolume(mopidyCurrentTrack['id'])
-      oMopidy.volume_set(volume)
-
-      currentMode = constant.STATE_MODE_PLAY
-      oScreen.play(mopidyCurrentTrack, True)
-
-    if currentMopidyStatus=='paused' or currentMopidyStatus=='stop' or currentMopidyStatus=='stopped':
-      oMopidy.stop()
-      oMopidy.tracklist_clear()
-      currentMode = constant.STATE_MODE_REGULAR
-      oMqttClient.publish(constant.MQTT_TOPIC_ANIMATION_STOP,
-        json.dumps({})
-      )
-      oScreen.clock(True)
-    
-  return True
-
-oScreen.println("Start mopidy status timer")
-timerMopidyStatus = tools.PeriodicTimer(1, mopidyGetPlayingStatus)
-timerMopidyStatus.start()
+mopidyCurrentTrack = oMopidy.getCurrentTrack()
 
 # ===========================================================================
 # Speak
 # ===========================================================================
 oScreen.println("Init speak")
-oSpeak = speak.speak()
+oSpeak = speak.speak(
+  core = oCore,
+  logging = logging,
+  mopidy = oMopidy
+)
 oSpeak.verbose = args.verbose
 oSpeak.logging = logging
 
 # ===========================================================================
 # Rfid
 # ===========================================================================
-def rfidRemove(id, text):
+def rfidChange(id, jsonDatas, idOld, jsonDatasOld):
   if args.verbose:
-    print('Remove to ' + id + ' : ' + text)
+    print('change to ' + id + ' : ' + json.dumps(jsonDatas))
 
-  logging.info('Remove to ' + id + ' : ' + text)
+  publish.single(
+    constant.MQTT_TOPIC_RFID,
+    json.dumps({
+      "action": "change",
+      "datas": jsonDatas,
+      "id": id,
+      "old": {
+        "datas": jsonDatasOld,
+        "id": idOld
+      }
+    }),
+    hostname=str(constant.MQTT_HOST),
+    port=int(constant.MQTT_PORT),
+    client_id=oCore.mqttClientId
+  )
+
+def rfidRemove(id, jsonDatas):
+  if args.verbose:
+    print('Remove to ' + id + ' : ' + json.dumps(jsonDatas))
+
+  logging.info('Remove to ' + id + ' : ' + json.dumps(jsonDatas))
 
   publish.single(
     constant.MQTT_TOPIC_RFID,
     json.dumps({
       "action": "remove",
-      "text": text,
+      "datas": jsonDatas,
       "id": id
     }),
     hostname=str(constant.MQTT_HOST),
     port=int(constant.MQTT_PORT),
-    client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
+    client_id=oCore.mqttClientId
   )
 
   if args.verbose:
-    print("Pause play")
+    print("Stop play")
 
-  oMopidy.pause()
+  oMopidy.stop()
 
-def rfidInsert(id, text):
-  global currentMode, mopidyCurrentTrack
+def rfidInsert(id, jsonDatas):
+  global mopidyCurrentTrack
 
   if args.verbose:
-    print('Insert to ' + id + ' : ' + text)
+    print('Insert to ' + id + ' : ' + json.dumps(jsonDatas))
 
   publish.single(
     constant.MQTT_TOPIC_RFID,
     json.dumps({
       "action": "insert",
-      "text": text,
+      "datas": jsonDatas,
       "id": id
     }),
     hostname=str(constant.MQTT_HOST),
     port=int(constant.MQTT_PORT),
-    client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
+    client_id=oCore.mqttClientId
   )
-  if currentMode==constant.STATE_MODE_REGULAR:
-    id, text = oRfid.readSectors([constant.SECTOR_1, constant.SECTOR_2, constant.SECTOR_3, constant.SECTOR_4, constant.SECTOR_5])
+  if oCore.getMode()==constant.STATE_MODE_REGULAR:
     try:
       
-      currentMode = constant.STATE_MODE_WAITPLAY
+      oCore.setMode(constant.STATE_MODE_WAITPLAY)
       oScreen.wait(True, 'Préparation de la liste de lecture')
       time.sleep(0.5)
-
-      jsonDatas = json.loads(text.strip('\x00'))
 
       sUrl = 'unknow'
       sStyle = constant.STYLE_MUSIC
@@ -806,7 +762,7 @@ def rfidInsert(id, text):
 
         logging.info(sMessage)
 
-        currentMode = constant.STATE_MODE_WAITPLAY
+        oCore.setMode(constant.STATE_MODE_WAITPLAY)
         oScreen.wait(True, 'Lancement de la lecture')
         time.sleep(0.5)
 
@@ -851,47 +807,33 @@ def rfidInsert(id, text):
               }),
               hostname=str(constant.MQTT_HOST),
               port=int(constant.MQTT_PORT),
-              client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
+              client_id=oCore.mqttClientId
             )
 
       else:
-        currentMode = constant.STATE_MODE_REGULAR
+        oCore.setMode(constant.STATE_MODE_REGULAR)
         if args.verbose:
           print("Not lauch music " + sStyle + ", " + sMode + " because we have no url")
         logging.info("Not lauch music " + sStyle + ", " + sMode + " because we have no url")
 
     except:
-      currentMode = constant.STATE_MODE_REGULAR
+      oCore.setMode(constant.STATE_MODE_REGULAR)
       if args.verbose:
         print("Json decode datas unexpected error:", sys.exc_info()[0])
       logging.error("Json decode datas unexpected error:", sys.exc_info()[0])
-      raise
+      pass
 
-def rfidChange(id, text, idOld, textOld):
+def rfidPresence(status):
   if args.verbose:
-    print('change to ' + id + ' : ' + text)
-
-  publish.single(
-    constant.MQTT_TOPIC_RFID,
-    json.dumps({
-      "action": "change",
-      "text": text,
-      "id": id,
-      "old": {
-        "text": textOld,
-        "id": idOld
-      }
-    }),
-    hostname=str(constant.MQTT_HOST),
-    port=int(constant.MQTT_PORT),
-    client_id=f"mqtt-{scriptName}-{random.randint(0, 1000)}"
-  )
+    print('RFID card is ' + status)
 
 oScreen.println("Init lecteur RFID")
 oRfid = rfid.rfid(
   remove_callback=rfidRemove,
   insert_callback=rfidInsert,
-  change_callback=rfidChange
+  change_callback=rfidChange,
+  presence_callback=rfidPresence,
+  sectors=constant.SECTORS
 )
 
 # ===========================================================================
@@ -907,7 +849,7 @@ def rotaryRotateCall(direction):
     print('Rotate to ' + direction)
   rotateDirection = direction
 
-  if currentMode==constant.STATE_MODE_PLAY:
+  if oCore.getMode()==constant.STATE_MODE_PLAY:
     if rotateDirection=='left':
       volume = oCore.getSpecificVolume(mopidyCurrentTrack['id']) + 1
       oCore.setSpecificVolume(mopidyCurrentTrack['id'], volume)
@@ -942,18 +884,18 @@ oMqttClient.publish(constant.MQTT_TOPIC_STATE,
 
 oScreen.println("Initialisation terminée!")
 oSpeak.say("Initialisation terminée!")
-time.sleep(4)
+time.sleep(10)
 
-currentMode = constant.STATE_MODE_REGULAR
+oCore.setMode(constant.STATE_MODE_REGULAR)
 
 oScreen.clock(True);
 
 # Continually update
 while(True):
   try:
-    if currentMode==constant.STATE_MODE_REGULAR:
+    if oCore.getMode()==constant.STATE_MODE_REGULAR:
       if swithRelease==1:
-        currentMode = constant.STATE_MODE_MENU
+        oCore.setMode(constant.STATE_MODE_MENU)
         swithRelease = 0
         affStart = time.time()
         secondsWait = constant.MENU_WAIT_SECONDS
@@ -963,41 +905,42 @@ while(True):
       else:
         oScreen.clock()
 
-    if currentMode==constant.STATE_MODE_MENU:
+    if oCore.getMode()==constant.STATE_MODE_MENU:
       while True:
         affCurrent = time.time() - affStart
         oScreen.draw.rectangle((0, oScreen.height-1, (affCurrent * waitStep) * 1000, oScreen.height-1), 0, 0)
 
         oRotary.triggerDisable()
         oScreen.cls('menu')
-        oMenu = menu.menu()
+        oMenu = menu.menu(
+          core = oCore
+        )
         oMenu.processmenu(oScreen, oRotary, menu_data)
         oRotary.setSwitchCallback(rotarySwitchCall)
         oRotary.setRotateCallback(rotaryRotateCall)
         oRotary.triggerEnable()
         swithRelease = 0
-        currentMode = constant.STATE_MODE_REGULAR
+        oCore.setMode(constant.STATE_MODE_REGULAR)
         oScreen.cls('menu out')
         break
 
       oScreen.display()
 
       if affCurrent>secondsWait:
-        currentMode = constant.STATE_MODE_REGULAR
+        oCore.setMode(constant.STATE_MODE_REGULAR)
         oScreen.cls('menu wait')
         break
 
-    if currentMode==constant.STATE_MODE_WAITPLAY:
-      oScreen.wait()
+    if oCore.getMode()==constant.STATE_MODE_WAITPLAY:
+      if oScreen.waitPlay(oCore):
+        oCore.setMode(constant.STATE_MODE_REGULAR)
+        oMopidy.stop()
+        oScreen.clock(True)
 
-    if currentMode==constant.STATE_MODE_PLAY:
+    if oCore.getMode()==constant.STATE_MODE_PLAY:
       oScreen.play(mopidyCurrentTrack)
-      oRfid.loop()
 
-    time.sleep(0.01)
-
-    if currentMode == constant.STATE_MODE_REGULAR:
-      oRfid.loop()
+    time.sleep(0.5)
 
   except KeyboardInterrupt:
     oMqttClient.publish(constant.MQTT_TOPIC_ANIMATION_STOP,

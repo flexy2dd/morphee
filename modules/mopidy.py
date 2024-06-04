@@ -11,6 +11,7 @@ import json
 import pprint
 import datetime
 import hashlib
+import paho.mqtt.publish as publish
 
 from modules import core
 from modules import tools
@@ -22,13 +23,104 @@ from modules import constant
 
 class mopidy():
 
-  def __init__(self):
-    self.core = core.core()
-    self.verbose = False
+  def __init__(self, **params):
+
+    self.core = None
     self.logging = False
+    self.verbose = False
     self.volume = constant.MOPIDY_VOLUME
     self.volume_set(self.volume)
     self.tracklist_off()
+
+    if 'core' in params:
+      self.core = params['core']
+
+    if 'logging' in params:
+      self.logging = params['logging']
+    else:
+      logging_level: int = self.core.getDebugLevelFromText(self.core.readConf("level", "logging", 'INFO'))
+      logging.basicConfig(level=int(logging_level))
+
+    if 'change_callback' in params:
+      self.changeCallback = params['change_callback']
+
+    self.timerStatus = tools.PeriodicTimer(1, self.getPlayingStatus)
+    self.timerStatus.start()
+
+    self.timerDetails = tools.PeriodicTimer(2, self.getPlayingDetails)
+    self.timerDetails.start()
+
+    self.currentTrack = mopidyCurrentTrack = {
+      'mode': constant.MODE_ONCE,
+      'style': constant.STYLE_MUSIC,
+      'url': '',
+      'length': 0,
+      'position': 0,
+      'artist': '',
+      'album': '',
+      'name': '',
+      'id': '',
+      'volume': 0
+    }
+    self.currentStatus = ''
+
+  def getCurrentTrack(self):
+    return self.currentTrack
+
+  def getPlayingDetails(self):
+
+    self.logging.debug("Mopidy check playing details")
+
+    if self.core.getMode() == constant.STATE_MODE_PLAY:
+      result = self.get_playing_details()
+
+      self.currentTrack = {**self.currentTrack, **result}
+
+      publish.single(
+        constant.MQTT_TOPIC_MOPIDY_TRKINFOS,
+        json.dumps(self.currentTrack),
+        hostname=str(constant.MQTT_HOST),
+        port=int(constant.MQTT_PORT),
+        client_id=self.core.mqttClientId
+      )
+    return True
+
+  def getCurrentStatus(self):
+    return self.currentStatus
+
+  def getPlayingStatus(self):
+
+    if self.core.getMode() == constant.STATE_MODE_STARTING:
+      return True
+
+    self.logging.debug("Mopidy check playing status")
+
+    #'playing', 'paused', 'stop', 'stopped'
+    result = self.playback_get_state()
+    if self.currentStatus != result:
+
+      logging.info("Mopidy state change " + self.currentStatus + " to " + result)
+
+      oldStatus = self.currentStatus
+      self.currentStatus = result
+
+      if self.currentStatus in ['playing'] and tools.isEmpty(self.currentTrack['id']):
+        currentTrack = self.getCurrentTrack()
+        sUrl = currentTrack['url']
+      
+        h = hashlib.new('sha1')
+        h.update(sUrl.encode())
+        self.currentTrack['id'] = h.hexdigest()
+
+      if self.currentStatus in ['paused', 'stop', 'stopped']:
+        self.currentTrack['id'] = ''
+
+      #self.triggerChange(self.currentStatus)
+      if not self.changeCallback is None:
+        self.logging.debug("Mopidy call change callback")
+        self.changeCallback(self.currentStatus, oldStatus)
+
+    return True
 
   #toggle play pause
   def play_pause(self):
@@ -36,7 +128,7 @@ class mopidy():
     r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.playback.get_state"})
 
     logging.debug('MOPIDY play_pause ' + r.text)
-  
+
     if r.text.find('playing') == -1:
       #not playing, go to play
       self.play()
@@ -51,12 +143,12 @@ class mopidy():
     logging.debug('MOPIDY play > ' + r.text)
 
   #go to pause
-  def pause(self):      
+  def pause(self):
     r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.playback.pause"})
     time.sleep(0.1)
     logging.debug('MOPIDY pause > ' + r.text)
 
-  #play next track       
+  #play next track
   def next(self):
     r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.playback.next"})
     time.sleep(0.1)
@@ -98,21 +190,21 @@ class mopidy():
     time.sleep(0.1)
     logging.debug('MOPIDY tracklist_off > ' + r.text)
 
-  #set shuffle tracklist 
+  #set shuffle tracklist
   def tracklist_shuffle(self, start  = None, end = None):
     r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.tracklist.shuffle", "params": {"start": start, "end": end}})
     print(r.text)
     time.sleep(0.1)
     logging.debug('MOPIDY tracklist_shuffle > ' + r.text)
 
-  #set remove for tracklist 
+  #set remove for tracklist
   # Parameters: criteria (dict[Literal['tlid', 'uri', 'name', 'genre', 'comment', 'musicbrainz_id'], Iterable[str | int]]) – one or more rules to match by
   def tracklist_remove(self, criteria = []):
     r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.tracklist.remove", "params": {"criteria": criteria}})
     time.sleep(0.1)
     logging.debug('MOPIDY tracklist_remove > ' + r.text)
 
-  #set move for tracklist 
+  #set move for tracklist
   # Parameters:
   # start (int) – position of first track to move
   # end (int) – position after last track to move
@@ -129,7 +221,7 @@ class mopidy():
     if r.status_code==200:
       try:
         jsonDatas = r.json()['result']
-        
+
         if not tools.isEmpty(jsonDatas):
           result = jsonDatas
 
@@ -159,9 +251,9 @@ class mopidy():
       except:
         logging.error("tracklist_slice unexpected error:", sys.exc_info()[0])
         raise
-       
+
     logging.debug('MOPIDY tracklist_slice > ' + r.text)
-    
+
     return result
 
 
@@ -172,7 +264,7 @@ class mopidy():
     if r.status_code==200:
       try:
         jsonDatas = r.json()['result']
-        
+
         if not tools.isEmpty(jsonDatas):
           result = jsonDatas
 
@@ -194,7 +286,7 @@ class mopidy():
   def volume_down(self):
     self.volume = self.volume - 1
     self.volume_set(volume)
-    
+
   def volume_set(self, volume):
     volume = int(volume)
     if volume < 0:
@@ -215,10 +307,10 @@ class mopidy():
 
     #Clear existing tracklist
     self.tracklist_clear()
-    
+
     r = requests.post(constant.MOPIDY_URL, json={"method": "core.tracklist.add", "jsonrpc": "2.0", "params": {"uris": [uri]}, "id": 1})
     time.sleep(0.1)
-    
+
     length = self.tracklist_length()
 
     if isLoop:
@@ -234,12 +326,12 @@ class mopidy():
           trackList = []
           for track in tracklistSlice:
             trackList.append(int(track['tlid']))
-      
+
           self.tracklist_remove({'tlid': trackList})
 
     logging.debug('MOPIDY create_playlist ' + uri + ' > ' + r.text)
 
-    self.play()
+    #self.play()
 
   def new_playlist(self, uri):
 
@@ -281,15 +373,15 @@ class mopidy():
     if r.status_code==200:
       try:
         jsonDatas = r.json()['result']
-    
+
         if not tools.isEmpty(jsonDatas):
 
           if not tools.isEmpty(jsonDatas['uri']):
             result['url'] = jsonDatas['uri']
-            
+
           if not tools.isEmpty(jsonDatas['length']):
             result['length'] = jsonDatas['length']
-          
+
           if not tools.isEmptyString(jsonDatas['name']):
             result['name'] = jsonDatas['name']
 
@@ -309,7 +401,7 @@ class mopidy():
     if r.status_code==200:
       try:
         jsonDatas = r.json()['result']
-        
+
         if not tools.isEmpty(jsonDatas):
           result['position'] = jsonDatas
 
@@ -319,5 +411,5 @@ class mopidy():
         raise
 
     logging.debug('MOPIDY get_playing_details > ' + r.text)
-    
+
     return result
