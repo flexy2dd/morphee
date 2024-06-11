@@ -44,6 +44,9 @@ class mopidy():
     if 'change_callback' in params:
       self.changeCallback = params['change_callback']
 
+    if 'update_callback' in params:
+      self.updateCallback = params['update_callback']
+
     self.timerStatus = tools.PeriodicTimer(1, self.getPlayingStatus)
     self.timerStatus.start()
 
@@ -83,6 +86,11 @@ class mopidy():
         port=int(constant.MQTT_PORT),
         client_id=self.core.mqttClientId
       )
+
+      if not self.updateCallback is None:
+        self.logging.debug("Mopidy call update callback")
+        self.updateCallback(self.currentTrack)
+
     return True
 
   def getCurrentStatus(self):
@@ -331,7 +339,7 @@ class mopidy():
 
     logging.debug('MOPIDY create_playlist ' + uri + ' > ' + r.text)
 
-    #self.play()
+    self.play()
 
   def new_playlist(self, uri):
 

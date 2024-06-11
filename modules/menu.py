@@ -2,6 +2,7 @@ import RPi.GPIO as GPIO
 import time
 import math
 import os
+import logging
 from PIL import ImageFont, ImageDraw, Image
 from modules import constant
 from modules import network

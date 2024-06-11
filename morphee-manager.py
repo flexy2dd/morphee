@@ -559,6 +559,17 @@ publish.single(
 # ===========================================================================
 oScreen.println("Init mopidy")
 
+def mopidyUpdateDetails(currentTrack):
+  global mopidyCurrentTrack
+
+  if args.verbose:
+    print("Mopidy update details " + currentTrack['name'])
+
+  logging.info("Mopidy update details " + currentTrack['name'])
+
+  if oCore.getMode() == constant.STATE_MODE_PLAY:
+    mopidyCurrentTrack = currentTrack
+
 def mopidyStatusChange(newStatus, oldStatus):
 
   if args.verbose:
@@ -593,7 +604,8 @@ def mopidyStatusChange(newStatus, oldStatus):
 oMopidy = mopidy.mopidy(
   core = oCore,
   logging = logging,
-  change_callback=mopidyStatusChange
+  change_callback=mopidyStatusChange,
+  update_callback=mopidyUpdateDetails
 )
 oMopidy.verbose = args.verbose
 oMopidy.stop()
