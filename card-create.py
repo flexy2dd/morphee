@@ -212,6 +212,11 @@ if __name__ == "__main__":
 
     print(len(json_payload_bytes))
     print(json_payload_bytes)
+    json_payload_bytes.pop(0)
+    json_payload_bytes.pop(0)
+    json_payload_bytes.pop(0)
+    print(json_payload_bytes)
+    
     
  
  
