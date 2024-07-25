@@ -24,6 +24,13 @@ oMopidy = mopidy.mopidy(
 )
 oMopidy.verbose = True
 
+oMopidy.create_playlist(
+  'file:///opt/music/sommeil/voix/meditation',
+  True,
+  True,
+  False
+)
+
 while True:
   time.sleep(0.1)
 #(self, uri, isOnce = True, isShuffle = False, isLoop = False):

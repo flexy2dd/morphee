@@ -26,7 +26,7 @@ class mopidy():
   def __init__(self, **params):
 
     self.core = None
-    self.logging = False
+    self.logging = None
     self.verbose = False
     self.volume = constant.MOPIDY_VOLUME
     self.volume_set(self.volume)
@@ -38,8 +38,10 @@ class mopidy():
     if 'logging' in params:
       self.logging = params['logging']
     else:
-      logging_level: int = self.core.getDebugLevelFromText(self.core.readConf("level", "logging", 'INFO'))
-      logging.basicConfig(level=int(logging_level))
+      if self.core != None:
+        logging_level: int = constant.DEBUG_LEVELS['DEBUG']
+      else:
+        logging_level: int = self.core.getDebugLevelFromText(self.core.readConf("level", "logging", 'INFO'))
 
     if 'change_callback' in params:
       self.changeCallback = params['change_callback']
@@ -72,7 +74,7 @@ class mopidy():
 
   def getPlayingDetails(self):
 
-    self.logging.debug("Mopidy check playing details")
+    logging.debug("Mopidy check playing details")
 
     if self.core.getMode() == constant.STATE_MODE_PLAY:
       result = self.get_playing_details()
@@ -88,7 +90,7 @@ class mopidy():
       )
 
       if not self.updateCallback is None:
-        self.logging.debug("Mopidy call update callback")
+        logging.debug("Mopidy call update callback")
         self.updateCallback(self.currentTrack)
 
     return True
@@ -101,7 +103,7 @@ class mopidy():
     if self.core.getMode() == constant.STATE_MODE_STARTING:
       return True
 
-    self.logging.debug("Mopidy check playing status")
+    logging.debug("Mopidy check playing status")
 
     #'playing', 'paused', 'stop', 'stopped'
     result = self.playback_get_state()
@@ -125,7 +127,7 @@ class mopidy():
 
       #self.triggerChange(self.currentStatus)
       if not self.changeCallback is None:
-        self.logging.debug("Mopidy call change callback")
+        logging.debug("Mopidy call change callback")
         self.changeCallback(self.currentStatus, oldStatus)
 
     return True
@@ -169,6 +171,28 @@ class mopidy():
     logging.debug('MOPIDY stop > ' + r.text)
 
   #clear tracklist
+  def library_browse(self, value = ""):
+    print(value)
+    r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.library.browse", "params": {"uri": value}})
+    print(r.json())
+    if r.status_code==200:
+      try:
+        jsonDatas = r.json()['result']
+
+        if not tools.isEmpty(jsonDatas):
+          result = jsonDatas
+
+      except:
+
+        logging.error("browse unexpected error:", sys.exc_info()[0])
+        raise
+
+    time.sleep(0.1)
+    logging.debug('MOPIDY library_browse > ' + r.text)
+
+    return result
+
+  #clear tracklist
   def tracklist_clear(self):
     r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.tracklist.clear"})
     time.sleep(0.1)
@@ -201,7 +225,6 @@ class mopidy():
   #set shuffle tracklist
   def tracklist_shuffle(self, start  = None, end = None):
     r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.tracklist.shuffle", "params": {"start": start, "end": end}})
-    print(r.text)
     time.sleep(0.1)
     logging.debug('MOPIDY tracklist_shuffle > ' + r.text)
 
@@ -316,10 +339,27 @@ class mopidy():
     #Clear existing tracklist
     self.tracklist_clear()
 
-    r = requests.post(constant.MOPIDY_URL, json={"method": "core.tracklist.add", "jsonrpc": "2.0", "params": {"uris": [uri]}, "id": 1})
+    isTrack = re.search("^file:(.*)(\.mp3)$", uri, re.IGNORECASE)
+    if isTrack:
+      uris = [uri]
+
+    else:
+      tracks = self.library_browse(uri)
+      if len(tracks)>0:
+        uris = []
+        for track in tracks:
+          isMp3 = re.search("(\.mp3)$", track['uri'], re.IGNORECASE)
+          if isMp3:
+            uris.append(track['uri'])
+
+    r = requests.post(constant.MOPIDY_URL, json={"method": "core.tracklist.add", "jsonrpc": "2.0", "params": {"uris": uris}, "id": 1})
     time.sleep(0.1)
 
     length = self.tracklist_length()
+
+    if length<=0:
+      logging.info('MOPIDY create_playlist uris is empty')
+      return False
 
     if isLoop:
       self.tracklist_repeat()

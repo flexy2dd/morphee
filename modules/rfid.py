@@ -30,10 +30,16 @@ class rfid():
     self.sectors = []
     self.verbose = False
     self.trigger = True
+    self.checkPresence = True
 
     # Presence card
     GPIO.setup(constant.GPIO_RFID_DETECT, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.add_event_detect(constant.GPIO_RFID_DETECT, GPIO.BOTH, callback=self.cardPresenceCall, bouncetime=50) 
+
+    gpioMode = GPIO.getmode()
+    print('gpioMode ' + str(gpioMode))
+    print('gpioMode BOARD ' + str(GPIO.BOARD))
+    print('gpioMode BCM ' + str(GPIO.BCM))
 
     if 'remove_callback' in params:
       self.removeCallback = params['remove_callback']
@@ -51,23 +57,27 @@ class rfid():
       self.sectors = params['sectors']
 
   def cardPresenceCall(self, channel):
-    state = GPIO.input(constant.GPIO_RFID_DETECT)
-    if state == 0:
-        if self.cardPresence == 1:
-          self.cardPresence = 0
-          if not self.presenceCallback is None:
-            self.presenceCallback('remove')
-          self.triggerCardRemoved()
-        else:
-          pass
-    else: 
-        if self.cardPresence == 0:
-          self.cardPresence = 1
-          if not self.presenceCallback is None:
-            self.presenceCallback('insert')
-          self.triggerCardInserted()
-        else:
-          pass
+    if self.checkPresence:
+        state = GPIO.input(constant.GPIO_RFID_DETECT)
+        if state == 0:
+            if self.cardPresence == 1:
+              self.cardPresence = 0
+              time.sleep(0.2)
+              if not self.presenceCallback is None:
+                self.presenceCallback('remove')
+              self.triggerCardRemoved()
+            else:
+              pass
+        else: 
+            if self.cardPresence == 0:
+              self.cardPresence = 1
+              
+              time.sleep(0.2)
+              if not self.presenceCallback is None:
+                self.presenceCallback('insert')
+              self.triggerCardInserted()
+            else:
+              pass
 
   def triggerCardRemoved(self):
     if self.verbose:
@@ -109,6 +119,7 @@ class rfid():
     self.sectors = sectors
 
   def setTrigger(self, trigger):
+    self.checkPresence = trigger
     self.trigger = trigger
 
   def setTriggerOff(self):
@@ -134,7 +145,6 @@ class rfid():
       self.removeCallback(id, jsonDatas)
 
   def waitInsert(self, loopTimeout = 30, oScreen = None):
-    id, text = self.reader.read_no_block(constant.SECTOR_1)
     loopStartTime = time.time()
     loopTimeoutTime = time.time() + loopTimeout
     while time.time() <= loopTimeoutTime:
@@ -143,12 +153,13 @@ class rfid():
       if oScreen != None:
         oScreen.countdown(loopStep + 1, 'arrow-down', 'Veuillez inserer une carte')
 
-      if id:
+      state = GPIO.input(constant.GPIO_RFID_DETECT)
+      if state == 1:
+
         if oScreen != None:
           oScreen.cls()
-        return True
 
-      id, text = self.reader.read_no_block(constant.SECTOR_1)
+        return True
 
     if oScreen != None:
       oScreen.cls()
@@ -156,7 +167,6 @@ class rfid():
     return False
 
   def waitRemove(self, loopTimeout = 60, oScreen = None):
-    id = 123456789
     loopStartTime = time.time()
     loopTimeoutTime = time.time() + loopTimeout
     while time.time() <= loopTimeoutTime:
@@ -165,57 +175,18 @@ class rfid():
       if oScreen != None:
         oScreen.countdown(loopStep + 1, 'arrow-up', 'Veuillez retirer la carte')
 
-      timeout = 1
-      idx = 0
-      id, text = self.reader.read_no_block(constant.SECTOR_1)
-      while not id and idx<timeout:
-        id, text = self.reader.read_no_block(constant.SECTOR_1)
-        idx = idx + 0.100
-        time.sleep(0.01)
+      state = GPIO.input(constant.GPIO_RFID_DETECT)
+      if state == 0:
 
-      if id == None:
         if oScreen != None:
           oScreen.cls()
+
         return True
 
     if oScreen != None:
       oScreen.cls()
 
     return False
-
-#  def loop(self):
-#    now = datetime.datetime.now()
-#
-#    #if now.second != self.loopTimeSecond and now.second in [0, 2, 4, 6, 8, 10, 12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,58]:
-#    if now.second != self.loopTimeSecond and now.second in [0,4,8,12,16,20,24,28,32,36,40,44,48,52,58]:
-#      self.loopTimeSecond = now.second
-#      print('check RFID')
-#      try:
-#        timeout = 0.5
-#        idx = 0
-#        id, text = self.reader.read_no_block(constant.SECTOR_1)
-#        while not id and idx<timeout:
-#          id, text = self.reader.read_no_block(constant.SECTOR_1)
-#          idx = idx + 0.1
-#          time.sleep(0.1)
-#
-#        print('OK')
-#        if self.lastId != id:
-#            self.triggerChange(str(id), str(text), str(self.lastId), str(self.lastJson))
-#      
-#        if self.lastId is None and not id is None:
-#            id, text = self.readSectors([constant.SECTOR_1, constant.SECTOR_2, constant.SECTOR_3, constant.SECTOR_4, constant.SECTOR_5])
-#            self.triggerInsert(str(id), str(text))
-#      
-#        if not self.lastId is None and id is None:
-#            self.triggerRemove(str(self.lastId), str(self.lastJson))
-#      
-#        self.lastId = id
-#        self.lastJson = text
-#      
-#      except:
-#        print("Unexpected error:", sys.exc_info()[0])
-#        pass
 
   def readSector(self, trailer_block):
     id, text = self.reader.read_no_block(trailer_block)

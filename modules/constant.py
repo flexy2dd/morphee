@@ -65,6 +65,7 @@ STATE_MODE_MENU = "menu"
 STATE_MODE_PLAY = "play"
 STATE_MODE_WAITPLAY = "waitplay"
 STATE_MODE_STARTING = "starting"
+STATE_MODE_SAY = "say"
 
 ANIMATION_NONE = 'none'
 ANIMATION_SPARKLEPULSE = 'sparklepulse'

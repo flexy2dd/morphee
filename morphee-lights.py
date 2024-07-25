@@ -44,8 +44,6 @@ from adafruit_led_animation.color import WHITE, RED, YELLOW, ORANGE, GREEN, TEAL
 # ===========================================================================
 parser = argparse.ArgumentParser(description="Morphe lights service")
 parser.add_argument("-v", "--verbose", help="verbose mode", action='store_true')
-parser.add_argument("-V", "--volume", help="volume (0 > 100)", type=int)
-parser.add_argument("-s", "--start", help="start mode", action='store_true')
 args = parser.parse_args()
 
 # ===========================================================================
@@ -258,7 +256,7 @@ if __name__ == "__main__":
     try:
 
       #print("animation " + currentAnimation + ' / ' + animation)
-      newAnimation = (currentAnimation != animation)
+      newAnimation = (currentAnimation != animation) or (currentAnimation == 'static') or (currentAnimation == 'progress')
 
       if newAnimation:
         logging.info("New animation " + animation + " detected")
@@ -266,10 +264,50 @@ if __name__ == "__main__":
       try:
 
         if animation == 'none':
-        
+
           pixels.fill((0, 0, 0))
           pixels.show()
-        
+
+        elif animation == 'progress':
+
+          if newAnimation:
+            oAnim = None
+            logging.info("Init progress: " + animation)
+
+            color = colorToTuple(animationParams['color'])
+            percent = animationParams['percent']
+            numPixels = len(pixels)
+            
+            onPixels = round((percent * numPixels / 100))
+
+            if args.verbose:
+              print("set on " + str(onPixels) + " pixels for " + str(percent) + " percent")
+
+            for i in range(numPixels):
+              if i<onPixels:
+                pixels[i] = color
+              else:
+                pixels[i] = (0, 0, 0)
+
+            pixels.show()
+
+        elif animation == 'static':
+          oAnim = None
+          if newAnimation:
+            logging.info("Init static: " + animation)
+
+            color = colorToTuple(animationParams['color'])
+            onPixels = animationParams['size']
+            numPixels = len(pixels)
+
+            for i in range(numPixels):
+              if i<onPixels:
+                pixels[i] = color
+              else:
+                pixels[i] = (0, 0, 0)
+
+            pixels.show()
+
         elif animation == 'chase':
           """
           Chase pixels in one direction in a single color, like a theater marquee sign.
@@ -607,11 +645,12 @@ if __name__ == "__main__":
                                  step=animationParams['step'])
 
       except Exception as err:
+        if args.verbose:
+          print(err, ". create animation " + animation + " failed.")
+
+        logging.error("%s. create animation " + animation + " failed.", err)
         animation = 'none'
         newAnimation = False
-        if args.verbose:
-          print("%s. create animation " + animation + " failed.", err)
-        logging.error("%s. create animation " + animation + " failed.", err)
         pass
 
       if newAnimation:
@@ -642,6 +681,8 @@ if __name__ == "__main__":
           
           if animation == 'energy':
             updateReactive()
+          elif animation == 'static':
+            time.sleep(0.25)
           else:
             oAnim.animate()
 

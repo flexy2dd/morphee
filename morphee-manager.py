@@ -31,6 +31,7 @@ from modules import tools
 from modules import rfid
 from modules import animator
 from modules import mopidy
+from modules import lights
 
 # ===========================================================================
 # Menu definition
@@ -89,7 +90,6 @@ args = parser.parse_args()
 #oCore.readGeneralConf(sKey, mDefault)
 scriptName = Path(__file__).stem
 oCore = core.core(scriptName)
-pprint.pprint(args.verbose)
 oCore.verbose = args.verbose
 oCore.setMode(constant.STATE_MODE_STARTING)
 
@@ -535,24 +535,11 @@ logging.info('Start MQTT on ' + str(constant.MQTT_HOST) + ':' + str(constant.MQT
 oMqttClient.connect(str(constant.MQTT_HOST), int(constant.MQTT_PORT))
 oMqttClient.loop_start()
 
-publish.single(
-  constant.MQTT_TOPIC_ANIMATION_START,
-  json.dumps({
-    "name": "chase",
-    "brightness": 10,
-    "time": 5,
-    "parameters": {
-      "speed": 0.05,
-      "color": "WHITE",
-      "size": 3,
-      "spacing": 6,
-      "reverse": False
-    }
-  }),
-  hostname=str(constant.MQTT_HOST),
-  port=int(constant.MQTT_PORT),
-  client_id=oCore.mqttClientId
-)
+# ===========================================================================
+# Lights
+# ===========================================================================
+oLights = lights.lights(oCore)
+oLights.chase(10, "WHITE", 10, 3, 6)
 
 # ===========================================================================
 # Mopidy
@@ -563,9 +550,9 @@ def mopidyUpdateDetails(currentTrack):
   global mopidyCurrentTrack
 
   if args.verbose:
-    print("Mopidy update details " + currentTrack['name'])
+    print("Mopidy update details " + str(currentTrack['name']))
 
-  logging.info("Mopidy update details " + currentTrack['name'])
+  logging.info("Mopidy update details " + str(currentTrack['name']))
 
   if oCore.getMode() == constant.STATE_MODE_PLAY:
     mopidyCurrentTrack = currentTrack
@@ -595,11 +582,17 @@ def mopidyStatusChange(newStatus, oldStatus):
   if newStatus in ['paused', 'stop', 'stopped']:
     oMopidy.stop()
     oMopidy.tracklist_clear()
-    oCore.setMode(constant.STATE_MODE_REGULAR)
+
+    if oCore.getMode() == constant.STATE_MODE_SAY:
+      oCore.setMode(oCore.getBeforeMode())
+      oCore.clearBeforeMode()
+    else:
+      oCore.setMode(constant.STATE_MODE_REGULAR)
+      oScreen.clock(True)
+
     oMqttClient.publish(constant.MQTT_TOPIC_ANIMATION_STOP,
       json.dumps({})
     )
-    oScreen.clock(True)
     
 oMopidy = mopidy.mopidy(
   core = oCore,
@@ -670,26 +663,30 @@ def rfidRemove(id, jsonDatas):
 
   oMopidy.stop()
 
+  if oCore.getMode()==constant.STATE_MODE_WAITPLAY:
+    oCore.setMode(constant.STATE_MODE_REGULAR)
+    oScreen.clock(True)
+
 def rfidInsert(id, jsonDatas):
   global mopidyCurrentTrack
 
   if args.verbose:
     print('Insert to ' + id + ' : ' + json.dumps(jsonDatas))
 
-  publish.single(
-    constant.MQTT_TOPIC_RFID,
-    json.dumps({
-      "action": "insert",
-      "datas": jsonDatas,
-      "id": id
-    }),
-    hostname=str(constant.MQTT_HOST),
-    port=int(constant.MQTT_PORT),
-    client_id=oCore.mqttClientId
-  )
+  #publish.single(
+  #  constant.MQTT_TOPIC_RFID,
+  #  json.dumps({
+  #    "action": "insert",
+  #    "datas": jsonDatas,
+  #    "id": id
+  #  }),
+  #  hostname=str(constant.MQTT_HOST),
+  #  port=int(constant.MQTT_PORT),
+  #  client_id=oCore.mqttClientId
+  #)
   if oCore.getMode()==constant.STATE_MODE_REGULAR:
     try:
-      
+      oLights.progress(100, "BLUE")
       oCore.setMode(constant.STATE_MODE_WAITPLAY)
       oScreen.wait(True, 'Préparation de la liste de lecture')
       time.sleep(0.5)
@@ -716,6 +713,8 @@ def rfidInsert(id, jsonDatas):
       else:
         jsonDatas['style'] = sStyle
 
+      oLights.progress(80, "BLUE")
+
       if 'picto' in jsonDatas:
         if not tools.isEmptyString(jsonDatas['picto']):
           fileName = self.core.getRootPath() + "icons/mode-" + jsonDatas['picto'] + ".png"
@@ -731,12 +730,16 @@ def rfidInsert(id, jsonDatas):
       else:
         jsonDatas['loop'] = bLoop
 
+      oLights.progress(70, "BLUE")
+      
       if 'shuffle' in jsonDatas:
         if jsonDatas['shuffle'] in [True, False]:
           bShuffle = jsonDatas['shuffle']
           sMessage = sMessage + ' and shuffle list'
       else:
         jsonDatas['shuffle'] = bShuffle
+
+      oLights.progress(60, "BLUE")
 
       if 'once' in jsonDatas:
         if jsonDatas['once'] in [True, False]:
@@ -745,6 +748,8 @@ def rfidInsert(id, jsonDatas):
       else:
         jsonDatas['once'] = bOnce
 
+      oLights.progress(50, "BLUE")
+
       if 'limit' in jsonDatas:
         if not tools.isEmpty(jsonDatas['limit']):
           iLimit = jsonDatas['limit']
@@ -752,12 +757,16 @@ def rfidInsert(id, jsonDatas):
       else:
         jsonDatas['limit'] = iLimit
 
+      oLights.progress(40, "BLUE")
+
       if 'keep' in jsonDatas:
         if not tools.isEmpty(jsonDatas['keep']):
           iKeep = jsonDatas['keep']
           sMessage = sMessage + ' and keep ' + str(iKeep)
       else:
         jsonDatas['keep'] = iKeep
+
+      oLights.progress(30, "BLUE")
 
       if 'animation' in jsonDatas:
         if jsonDatas['animation'] in [constant.ANIMATION_NONE, constant.ANIMATION_SPARKLEPULSE]:
@@ -774,6 +783,8 @@ def rfidInsert(id, jsonDatas):
 
         logging.info(sMessage)
 
+        oLights.progress(20, "BLUE")
+
         oCore.setMode(constant.STATE_MODE_WAITPLAY)
         oScreen.wait(True, 'Lancement de la lecture')
         time.sleep(0.5)
@@ -786,7 +797,8 @@ def rfidInsert(id, jsonDatas):
         oMopidy.volume_set(volume)
 
         mopidyCurrentTrack = {**mopidyCurrentTrack, **jsonDatas}
-
+        
+        oLights.progress(10, "BLUE")
         logging.info("Create playlist")
         oMopidy.create_playlist(
           sUrl,
@@ -796,6 +808,8 @@ def rfidInsert(id, jsonDatas):
           iKeep
         )
         logging.info("Create playlist success")
+
+        oLights.progress(0, "BLUE")
 
         animBrightness = oCore.getAnimBrightness()
 
@@ -823,12 +837,14 @@ def rfidInsert(id, jsonDatas):
             )
 
       else:
+        oLights.progress(0, "BLUE")
         oCore.setMode(constant.STATE_MODE_REGULAR)
         if args.verbose:
           print("Not lauch music " + sStyle + ", " + sMode + " because we have no url")
         logging.info("Not lauch music " + sStyle + ", " + sMode + " because we have no url")
 
     except:
+      oLights.progress(0, "BLUE")
       oCore.setMode(constant.STATE_MODE_REGULAR)
       if args.verbose:
         print("Json decode datas unexpected error:", sys.exc_info()[0])
@@ -863,7 +879,8 @@ def rotaryRotateCall(direction):
 
   if oCore.getMode()==constant.STATE_MODE_PLAY:
     if rotateDirection=='left':
-      volume = oCore.getSpecificVolume(mopidyCurrentTrack['id']) + 1
+      volumeStep = oCore.getVolumeStep()
+      volume = oCore.getSpecificVolume(mopidyCurrentTrack['id']) + volumeStep
       oCore.setSpecificVolume(mopidyCurrentTrack['id'], volume)
       oMopidy.volume_set(volume)
       mopidyCurrentTrack['volume'] = int(volume)
@@ -871,7 +888,8 @@ def rotaryRotateCall(direction):
       if args.verbose:
         print('Set specific volume ' + str(volume) + ' for ' + str(mopidyCurrentTrack['id']))
     else:
-      volume = oCore.getSpecificVolume(mopidyCurrentTrack['id']) - 1
+      volumeStep = oCore.getVolumeStep()
+      volume = oCore.getSpecificVolume(mopidyCurrentTrack['id']) - volumeStep
       oCore.setSpecificVolume(mopidyCurrentTrack['id'], volume)
       oMopidy.volume_set(volume)
       mopidyCurrentTrack['volume'] = int(volume)
@@ -896,7 +914,8 @@ oMqttClient.publish(constant.MQTT_TOPIC_STATE,
 
 oScreen.println("Initialisation terminée!")
 oSpeak.say("Initialisation terminée!")
-time.sleep(10)
+time.sleep(2)
+oLights.cls()
 
 oCore.setMode(constant.STATE_MODE_REGULAR)
 

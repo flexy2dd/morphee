@@ -24,6 +24,7 @@ class core():
     self.scriptName = scriptName
     self.confFile = constant.CORE_CONF
     self.verbose = False
+    self.beforeMode = None
     self.mode = constant.STATE_MODE_STARTING
     self.modeUpdated = datetime.now()
     self.mqttClientId = f"mqtt-{self.scriptName}-{random.randint(0, 1000)}"
@@ -52,6 +53,18 @@ class core():
 
   def getMode(self):
     return self.mode
+
+  def setBeforeMode(self, beforeMode):
+    if self.verbose:
+      print('set before mode to ' + beforeMode)
+
+    self.beforeMode = beforeMode
+
+  def getBeforeMode(self):
+    return self.beforeMode
+
+  def clearBeforeMode(self):
+    self.beforeMode = None
 
   def getFilePid(self):
     return '%s/../%s' % (os.path.dirname(__file__), constant.CORE_PID)
@@ -111,6 +124,10 @@ class core():
   def getLight(self):
     oConf = self.getConf()
     return int(oConf.get('general', 'light', fallback=constant.LIGHT_ON))
+
+  def getVolumeStep(self):
+    oConf = self.getConf()
+    return int(oConf.get('general', 'volume_step', fallback='4'))
 
   def setGeneralVolume(self, volume):
     if os.path.isfile(self.confFile):

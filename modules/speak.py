@@ -111,10 +111,11 @@ class speak():
         if self.verbose:
           print("Set speak volume " + str(self.volume) + " by value")
 
-      
       sUrl = 'file:///opt/morphee/speak/' + fileKey + '.mp3'
 
-      self.mopidy.volume_set(self.volume)
-      self.mopidy.tracklist_repeat(repeat)
-      self.mopidy.new_playlist(sUrl)
+      #self.core.setBeforeMode(self.core.getMode())
+      #self.core.setMode(constant.STATE_MODE_SAY)
+      #self.mopidy.volume_set(self.volume)
+      #self.mopidy.tracklist_repeat(repeat)
+      #self.mopidy.new_playlist(sUrl)
 
