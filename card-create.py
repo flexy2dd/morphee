@@ -164,18 +164,7 @@ def readSectors(trailer_blocks):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='write NFC tags')
 
-    #usingreader_group = parser.add_argument_group('usingreader')
-    #usingreader_group.add_argument('--usingreader', nargs=1, metavar='READER_ID', help='Reader to use [0-X], default is 0')
-
-    #read_group = parser.add_argument_group('read')
-    #read_group.add_argument('--read', nargs='+', help='Sectors to read. Can be a x-x range, or list of sectors')
-    #read_group.add_argument('--read', nargs='+', help='Sectors to read. Can be a x-x range, or list of sectors')
-
-    #write_group = parser.add_argument_group('write')
-    #write_group.add_argument('--write', nargs=2, metavar=('PAGE', 'DATA'), help='Page number and hex value to write.')
-
     parser.add_argument('--url', nargs='?', help='Url.', required=True)
-
     parser.add_argument('--style', nargs='?', help='Style de musique. zen, nature, music (defaut), relax, love', default='music', choices = ['zen', 'music', 'relax', 'love'])
     parser.add_argument('--picto', nargs='?', help='Picto.', default='')
     parser.add_argument('--mode', nargs='?', help='Mode de lecture. once (defaut), shuffle, loop', default='once', choices = ['once', 'shuffle', 'loop'])
