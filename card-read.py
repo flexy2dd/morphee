@@ -81,18 +81,63 @@ def readBlock(block):
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Read NFC tags')
   parser.add_argument('--pretty', help='Pretty print.', action='store_true')
+  parser.add_argument('--command', help='Créer une ligne de commande.', action='store_true')
 
   args = parser.parse_args()
 
+  ready = True
   payload_bytes = []
   for block in constant.BLOCKS:
     success, datas = readBlock(block)
     if success:
       payload_bytes.extend(datas)
+    else:
+      ready = False
 
-  payload = smartcard.util.toASCIIString(payload_bytes).rstrip(".!")
+  if ready:
+    payload = smartcard.util.toASCIIString(payload_bytes).rstrip(".!")
+    payload_object = json.loads(payload)
 
-  if args.pretty:
-    print(json.dumps(json.loads(payload), indent=2))
+    if args.command:
+      line = ''
+      
+      if "anim" in payload_object:
+        line += ' --anim ' + payload_object["anim"]
+
+      if "picto" in payload_object:
+        if payload_object["picto"].strip() != "":
+          line += ' --picto ' + payload_object["picto"]
+
+      if "style" in payload_object:
+        line += ' --style ' + payload_object["style"]
+
+      if "shuffle" in payload_object:
+        if payload_object["shuffle"]==1:
+          line += ' --shuffle'
+
+      if "once" in payload_object:
+        if payload_object["once"]==1:
+          line += ' --once'
+
+      if "loop" in payload_object:
+        if payload_object["limit"]==1:
+          line += ' --loop'
+
+      if "limit" in payload_object:
+        line += ' --limit ' + str(payload_object["limit"])
+
+      if "keep" in payload_object:
+        line += ' --keep ' + str(payload_object["keep"])
+
+      if "url" in payload_object:
+        line += ' --url ' + payload_object["url"]
+
+      print('card-create.py' + line)
+    else:
+      if args.pretty:
+        print(json.dumps(payload_object, indent=2))
+      else:
+        print(payload)
+
   else:
-    print(payload)
+    print("Read card FAILED")
