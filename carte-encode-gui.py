@@ -31,7 +31,7 @@ App configuration
 __title__="Morphee lecteur de carte"
 __version__="v0.1"    
 #style_path = resource_path("resources\\style.txt")
-#__icon__=resource_path("resources/logo.png")
+__icon__=resource_path("resources/logo.png")
 
 class MorpheeCardEncoder(QMainWindow):
     def __init__(self, parent=None):
@@ -40,7 +40,7 @@ class MorpheeCardEncoder(QMainWindow):
         self.height=600
         
         self.resize(self.width, self.height)
-        self.setWindowIcon(QIcon('./resources/logo.png'))
+        self.setWindowIcon(QIcon('resources/logo.png'))
         self.setWindowTitle('Morphee lecteur de carte')
         
         #center window on screen
@@ -56,7 +56,7 @@ class MorpheeCardEncoder(QMainWindow):
         #add connect group
         self.connectgrp=GroupClass(self)
         centralLayout.addWidget(self.connectgrp)
-
+        
 class CustomDialog(QDialog):
     def __init__(self, title, message):
         super().__init__()
@@ -77,15 +77,11 @@ class GroupClass(QGroupBox):
     def __init__(self,widget,title="Connection Configuration"):
         super().__init__(widget)
         self.widget=widget
-        #self.title=title
-        #self.sep="-"
-        #self.id=-1
-        #self.name=''
-        #self.items=find_USB_device()
-        #self.serial=None
+        self.updateView = True
         self.style = ['music', 'zen', 'relax', 'love']
         self.animation = ['none', 'sparkpulse']
         self.init()
+        self.updateViewChanged()
 
     def init(self):
         #self.setTitle(self.title)
@@ -102,7 +98,8 @@ class GroupClass(QGroupBox):
         styleLbl = QLabel("Style:")
         self.styleBox=QComboBox()
         self.styleBox.addItems(self.style)
-        self.styleBox.setCurrentIndex(0)        
+        self.styleBox.setCurrentIndex(0)
+        self.styleBox.currentTextChanged.connect(self.updateViewChanged)
         self.fields.addWidget(styleLbl,1,0,1,1)
         self.fields.addWidget(self.styleBox,1,1,1,1)
 
@@ -110,16 +107,19 @@ class GroupClass(QGroupBox):
         self.animBox=QComboBox()
         self.animBox.addItems(self.animation)
         self.animBox.setCurrentIndex(0)
+        self.animBox.currentTextChanged.connect(self.updateViewChanged)
         self.fields.addWidget(animLbl,2,0,1,1)
         self.fields.addWidget(self.animBox,2,1,1,1)
 
         pictoLbl = QLabel("Picto:")
         self.pictoEdit = QLineEdit("")
+        self.pictoEdit.textChanged.connect(self.updateViewChanged)
         self.fields.addWidget(pictoLbl,3,0,1,1)
         self.fields.addWidget(self.pictoEdit,3,1,1,1)
 
         urlLbl = QLabel("Url:")
         self.urlEdit = QLineEdit("")
+        self.urlEdit.textChanged.connect(self.updateViewChanged)
         self.fields.addWidget(urlLbl,4,0,1,1)
         self.fields.addWidget(self.urlEdit,4,1,1,1)
 
@@ -148,6 +148,7 @@ class GroupClass(QGroupBox):
         onceLbl = QLabel("Unique:")
         self.onceCheckBox = QCheckBox()
         self.onceCheckBox.setCheckState(Qt.CheckState.Checked)
+        self.onceCheckBox.stateChanged.connect(self.updateViewChanged)
         #onceCheckBox.stateChanged.connect(self.show_state)
         self.fields.addWidget(onceLbl,7,0,1,1)
         self.fields.addWidget(self.onceCheckBox,7,1,1,1)
@@ -155,6 +156,7 @@ class GroupClass(QGroupBox):
         shuffleLbl = QLabel("Aléatoire:")
         self.shuffleCheckBox = QCheckBox()
         self.shuffleCheckBox.setCheckState(Qt.CheckState.Unchecked)
+        self.shuffleCheckBox.stateChanged.connect(self.updateViewChanged)
         #shuffleCheckBox.stateChanged.connect(self.show_state)
         self.fields.addWidget(shuffleLbl,8,0,1,1)
         self.fields.addWidget(self.shuffleCheckBox,8,1,1,1)
@@ -162,6 +164,7 @@ class GroupClass(QGroupBox):
         loopLbl = QLabel("Boucle:")
         self.loopCheckBox = QCheckBox()
         self.loopCheckBox.setCheckState(Qt.CheckState.Unchecked)
+        self.loopCheckBox.stateChanged.connect(self.updateViewChanged)
         #loopCheckBox.stateChanged.connect(self.show_state)
         self.fields.addWidget(loopLbl,9,0,1,1)
         self.fields.addWidget(self.loopCheckBox,9,1,1,1)
@@ -183,13 +186,33 @@ class GroupClass(QGroupBox):
 
         self.setLayout(self.fields)
 
+    def updateViewChanged(self):
+        if self.updateView:
+            payload_object = {
+                "anim": self.animBox.currentText(),
+                "style": self.styleBox.currentText(),
+                "picto": self.pictoEdit.text(),
+                "once": self.onceCheckBox.isChecked(),
+                "shuffle": self.shuffleCheckBox.isChecked(),
+                "loop": self.loopCheckBox.isChecked(),
+                "keep": self.keepSlider.value(),
+                "limit": self.limitSlider.value(),
+                "url": self.urlEdit.text()
+            }
+            
+            self.datas.setText(json.dumps(payload_object, indent=2))      
+            payload = json.dumps(payload_object)
+            json_payload_bytes = smartcard.util.toASCIIBytes(payload)
+
     def keepSliderChanged(self):
         value = self.keepSlider.value()
         self.keepLbl.setText("Pistes à garder: " + str(value))
+        self.updateViewChanged()
           
     def limitSliderChanged(self):
         value = self.limitSlider.value()
         self.limitLbl.setText("Temps limit (min): " + str(value))
+        self.updateViewChanged()
 
     def readBlock(self, block):
         
@@ -270,6 +293,7 @@ class GroupClass(QGroupBox):
 
     def readCard(self):
 
+        self.updateView = False
         self.console.setText('')
         self.console.append('-'*100)
         self.datas.setText("")
@@ -332,6 +356,8 @@ class GroupClass(QGroupBox):
                 self.urlEdit.setText(payload_object["url"])
 
             QMessageBox.information(self, "Lecture de la carte", "Lecture de la carte réussi.")
+            
+            self.updateView = True
 
         else:
             QMessageBox.warning(self, "Lecture de la carte", message)

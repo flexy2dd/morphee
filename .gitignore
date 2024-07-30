@@ -136,3 +136,4 @@ config.conf
 cache/*.json
 speak/*.mp3
 speak/*.json
+audio/
