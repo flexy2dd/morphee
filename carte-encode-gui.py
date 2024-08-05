@@ -130,6 +130,16 @@ class GroupClass(QGroupBox):
         self.fields.addWidget(self.sayEdit,idxLine,1,1,1)
 
         idxLine += 1
+        self.sayVolLbl = QLabel("Volume titre:")
+        self.sayVolSlider = QSlider(Qt.Orientation.Horizontal)
+        self.sayVolSlider.setRange(0,100)
+        self.sayVolSlider.setSingleStep(1)
+        self.sayVolSlider.setValue(10)
+        self.sayVolSlider.valueChanged.connect(self.sayVolSliderChanged)
+        self.fields.addWidget(self.sayVolLbl,idxLine,0,1,1)
+        self.fields.addWidget(self.sayVolSlider,idxLine,1,1,1)
+
+        idxLine += 1
         urlLbl = QLabel("Url:")
         self.urlEdit = QLineEdit("")
         self.urlEdit.textChanged.connect(self.updateViewChanged)
@@ -216,12 +226,18 @@ class GroupClass(QGroupBox):
                 "keep": self.keepSlider.value(),
                 "limit": self.limitSlider.value(),
                 "say": self.sayEdit.text(),
+                "sayVol": self.sayVolSlider.value(),
                 "url": self.urlEdit.text()
             }
             
             self.datas.setText(json.dumps(payload_object, indent=2))      
             payload = json.dumps(payload_object)
             json_payload_bytes = smartcard.util.toASCIIBytes(payload)
+
+    def sayVolSliderChanged(self):
+        value = self.sayVolSlider.value()
+        self.sayVolLbl.setText("Volume titre: " + str(value))
+        self.updateViewChanged()
 
     def keepSliderChanged(self):
         value = self.keepSlider.value()
@@ -373,7 +389,10 @@ class GroupClass(QGroupBox):
 
             if "say" in payload_object:
                 self.sayEdit.setText(payload_object["say"])
-               
+
+            if "sayVol" in payload_object:
+                self.sayVolSlider.setValue(int(payload_object["sayVol"]))
+                 
             if "url" in payload_object:
                 self.urlEdit.setText(payload_object["url"])
 
@@ -472,6 +491,7 @@ class GroupClass(QGroupBox):
             "keep": self.keepSlider.value(),
             "limit": self.limitSlider.value(),
             "say": self.sayEdit.text(),
+            "sayVol": self.sayVolSlider.value(),
             "url": self.urlEdit.text()
         }
 
