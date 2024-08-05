@@ -38,7 +38,7 @@ class MorpheeCardEncoder(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.width=650
-        self.height=700
+        self.height=800
         
         self.resize(self.width, self.height)
         self.setWindowIcon(QIcon('resources/logo.png'))
@@ -130,7 +130,7 @@ class GroupClass(QGroupBox):
         self.fields.addWidget(self.sayEdit,idxLine,1,1,1)
 
         idxLine += 1
-        self.sayVolLbl = QLabel("Volume titre:")
+        self.sayVolLbl = QLabel("Volume titre: 10")
         self.sayVolSlider = QSlider(Qt.Orientation.Horizontal)
         self.sayVolSlider.setRange(0,100)
         self.sayVolSlider.setSingleStep(1)
@@ -147,7 +147,7 @@ class GroupClass(QGroupBox):
         self.fields.addWidget(self.urlEdit,idxLine,1,1,1)
 
         idxLine += 1
-        self.keepLbl = QLabel("Pistes à garder:")
+        self.keepLbl = QLabel("Pistes à garder: 1")
         self.keepSlider = QSlider(Qt.Orientation.Horizontal)
         self.keepSlider.setRange(1,100)
         self.keepSlider.setSingleStep(1)
@@ -159,10 +159,11 @@ class GroupClass(QGroupBox):
         #keepSlider.sliderReleased.connect(self.slider_released)
 
         idxLine += 1
-        self.limitLbl = QLabel("Temps limit (min): 2600")
+        self.limitLbl = QLabel("Temps limit (min): 3600")
         self.limitSlider = QSlider(Qt.Orientation.Horizontal)
         self.limitSlider.setRange(1,3600)
         self.limitSlider.setSingleStep(1)
+        self.limitSlider.setValue(3600)
         self.limitSlider.valueChanged.connect(self.limitSliderChanged)
         self.fields.addWidget(self.limitLbl,idxLine,0,1,1)
         self.fields.addWidget(self.limitSlider,idxLine,1,1,1)
