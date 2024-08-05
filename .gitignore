@@ -7,6 +7,7 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+output/
 .Python
 build/
 develop-eggs/
@@ -135,3 +136,4 @@ config.conf
 cache/*.json
 speak/*.mp3
 speak/*.json
+audio/
