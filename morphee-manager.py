@@ -775,13 +775,20 @@ def rfidInsert(id, jsonDatas):
       else:
         jsonDatas['animation'] = sAnimation
 
-      if not tools.isEmptyString(jsonDatas['url']):
-        sUrl = jsonDatas['url']
-
-        if 'say' in jsonDatas:
-          if not tools.isEmptyString(jsonDatas['say']):
-            sSentence = jsonDatas['say']
-            sMessage = sMessage + ' say sentence ' + sSentence
+#      if not tools.isEmptyString(jsonDatas['url']):
+#        sUrl = jsonDatas['url']
+#
+#        if 'say' in jsonDatas:
+#          if not tools.isEmptyString(jsonDatas['say']):
+#
+#            iSayVol = 10
+#            if 'sayVol' in jsonDatas:
+#              if not tools.isEmptyInt(jsonDatas['sayVol']):
+#                iSayVol = jsonDatas['sayVol']
+#
+#            sSay = jsonDatas['say']
+#            sMessage = sMessage + ' say ' + sSay + ' with volume ' + str(iSayVol)
+#            oSpeak.say(sSay, iSayVol)
 
         if args.verbose:
           print(sMessage)

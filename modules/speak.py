@@ -63,6 +63,24 @@ class speak():
     
   def sayWithHomeAssistant(self, sentence, volume = None, repeat = False):
     
+    if volume==None:
+      self.volume = self.core.readConf('volume', 'speak', 15)
+      if self.verbose:
+        print("Set speak volume " + str(self.volume) + " from conf")
+    else:
+      self.volume = volume
+      if self.verbose:
+        print("Set speak volume " + str(self.volume) + " by value")
+
+    if sentence in ['bol1', 'bol2']:
+
+      fileName = self.core.getRootPath() + "resources/" + sentence + ".mp3"
+      m = alsaaudio.Mixer('PCM')
+      m.setvolume(int(self.volume))
+      playsound(fileName)
+      m.setvolume(0)
+      return True
+
     voiceName = self.core.readConf('voice', 'speak', 'ClaudeNeural')    
 
     hashKey = hashlib.sha1()
@@ -79,7 +97,7 @@ class speak():
         "sentence": sentence,
         "voice": voiceName,
         "key": fileKey,
-        "engine": engine
+        "engine": 'ha'
       }))
       f.close()
 
@@ -125,15 +143,6 @@ class speak():
       if self.verbose:
         print(fileKey + ".mp3")
 
-      if volume==None:
-        self.volume = self.core.readConf('volume', 'speak', 15)
-        if self.verbose:
-          print("Set speak volume " + str(self.volume) + " from conf")
-      else:
-        self.volume = volume
-        if self.verbose:
-          print("Set speak volume " + str(self.volume) + " by value")
-
       sUrl = 'file:///opt/morphee/speak/' + fileKey + '.mp3'
       m = alsaaudio.Mixer('PCM')
       m.setvolume(int(self.volume))
@@ -172,7 +181,7 @@ class speak():
         "sentence": sentence,
         "voice": voiceName,
         "key": fileKey,
-        "engine": engine
+        "engine": 'elevenlabs'
       }))
       f.close()
 
