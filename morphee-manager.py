@@ -778,6 +778,11 @@ def rfidInsert(id, jsonDatas):
       if not tools.isEmptyString(jsonDatas['url']):
         sUrl = jsonDatas['url']
 
+        if 'sentence' in jsonDatas:
+          if not tools.isEmptyString(jsonDatas['sentence']):
+            sSentence = jsonDatas['sentence']
+            sMessage = sMessage + ' say sentence ' + sSentence
+
         if args.verbose:
           print(sMessage)
 
