@@ -62,7 +62,7 @@ class rfid():
         if state == 0:
             if self.cardPresence == 1:
               self.cardPresence = 0
-              time.sleep(0.2)
+              time.sleep(1)
               if not self.presenceCallback is None:
                 self.presenceCallback('remove')
               self.triggerCardRemoved()
@@ -72,7 +72,7 @@ class rfid():
             if self.cardPresence == 0:
               self.cardPresence = 1
               
-              time.sleep(0.2)
+              time.sleep(1)
               if not self.presenceCallback is None:
                 self.presenceCallback('insert')
               self.triggerCardInserted()

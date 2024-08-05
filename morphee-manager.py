@@ -775,9 +775,9 @@ def rfidInsert(id, jsonDatas):
       else:
         jsonDatas['animation'] = sAnimation
 
-#      if not tools.isEmptyString(jsonDatas['url']):
-#        sUrl = jsonDatas['url']
-#
+     if not tools.isEmptyString(jsonDatas['url']):
+       sUrl = jsonDatas['url']
+
 #        if 'say' in jsonDatas:
 #          if not tools.isEmptyString(jsonDatas['say']):
 #
