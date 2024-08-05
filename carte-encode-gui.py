@@ -7,6 +7,7 @@ import json
 from smartcard.scard import *
 import smartcard.util
 from modules import constant
+from modules import tools
 #from PyQt5.QtWidgets import *
 #from PyQt5.QtCore import *
 #from PyQt5.QtGui import *
@@ -37,7 +38,7 @@ class MorpheeCardEncoder(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.width=650
-        self.height=600
+        self.height=700
         
         self.resize(self.width, self.height)
         self.setWindowIcon(QIcon('resources/logo.png'))
@@ -89,100 +90,117 @@ class GroupClass(QGroupBox):
         self.fields=QGridLayout()
         self.fields.setColumnMinimumWidth(0, 110)
         self.fields.setColumnMinimumWidth(0, 110)
-        self.fields.setRowMinimumHeight(10, 100)
+        
+        idxLine = 0
           
         self.readBtn = QPushButton("Decode")
-        self.fields.addWidget(self.readBtn,0,0,1,2)
+        self.fields.addWidget(self.readBtn,idxLine,0,1,2)
         self.readBtn.clicked.connect(self.readCard)
 
+        idxLine += 1
         styleLbl = QLabel("Style:")
         self.styleBox=QComboBox()
         self.styleBox.addItems(self.style)
         self.styleBox.setCurrentIndex(0)
         self.styleBox.currentTextChanged.connect(self.updateViewChanged)
-        self.fields.addWidget(styleLbl,1,0,1,1)
-        self.fields.addWidget(self.styleBox,1,1,1,1)
+        self.fields.addWidget(styleLbl,idxLine,0,1,1)
+        self.fields.addWidget(self.styleBox,idxLine,1,1,1)
 
+        idxLine += 1
         animLbl = QLabel("Animation:")        
         self.animBox=QComboBox()
         self.animBox.addItems(self.animation)
         self.animBox.setCurrentIndex(0)
         self.animBox.currentTextChanged.connect(self.updateViewChanged)
-        self.fields.addWidget(animLbl,2,0,1,1)
-        self.fields.addWidget(self.animBox,2,1,1,1)
+        self.fields.addWidget(animLbl,idxLine,0,1,1)
+        self.fields.addWidget(self.animBox,idxLine,1,1,1)
 
+        idxLine += 1
         pictoLbl = QLabel("Picto:")
         self.pictoEdit = QLineEdit("")
         self.pictoEdit.textChanged.connect(self.updateViewChanged)
-        self.fields.addWidget(pictoLbl,3,0,1,1)
-        self.fields.addWidget(self.pictoEdit,3,1,1,1)
+        self.fields.addWidget(pictoLbl,idxLine,0,1,1)
+        self.fields.addWidget(self.pictoEdit,idxLine,1,1,1)
 
+        idxLine += 1
+        sayLbl = QLabel("Titre parlé:")
+        self.sayEdit = QLineEdit("")
+        self.sayEdit.textChanged.connect(self.updateViewChanged)
+        self.fields.addWidget(sayLbl,idxLine,0,1,1)
+        self.fields.addWidget(self.sayEdit,idxLine,1,1,1)
+
+        idxLine += 1
         urlLbl = QLabel("Url:")
         self.urlEdit = QLineEdit("")
         self.urlEdit.textChanged.connect(self.updateViewChanged)
-        self.fields.addWidget(urlLbl,4,0,1,1)
-        self.fields.addWidget(self.urlEdit,4,1,1,1)
+        self.fields.addWidget(urlLbl,idxLine,0,1,1)
+        self.fields.addWidget(self.urlEdit,idxLine,1,1,1)
 
+        idxLine += 1
         self.keepLbl = QLabel("Pistes à garder:")
         self.keepSlider = QSlider(Qt.Orientation.Horizontal)
         self.keepSlider.setRange(1,100)
         self.keepSlider.setSingleStep(1)
         self.keepSlider.valueChanged.connect(self.keepSliderChanged)
-        self.fields.addWidget(self.keepLbl,5,0,1,1)
-        self.fields.addWidget(self.keepSlider,5,1,1,1)
+        self.fields.addWidget(self.keepLbl,idxLine,0,1,1)
+        self.fields.addWidget(self.keepSlider,idxLine,1,1,1)
         #keepSlider.sliderMoved.connect(self.slider_position)
         #keepSlider.sliderPressed.connect(self.slider_pressed)
         #keepSlider.sliderReleased.connect(self.slider_released)
 
+        idxLine += 1
         self.limitLbl = QLabel("Temps limit (min): 2600")
         self.limitSlider = QSlider(Qt.Orientation.Horizontal)
         self.limitSlider.setRange(1,3600)
         self.limitSlider.setSingleStep(1)
         self.limitSlider.valueChanged.connect(self.limitSliderChanged)
-        self.fields.addWidget(self.limitLbl,6,0,1,1)
-        self.fields.addWidget(self.limitSlider,6,1,1,1)
+        self.fields.addWidget(self.limitLbl,idxLine,0,1,1)
+        self.fields.addWidget(self.limitSlider,idxLine,1,1,1)
         #limitSlider.sliderMoved.connect(self.slider_position)
         #limitSlider.sliderPressed.connect(self.slider_pressed)
         #limitSlider.sliderReleased.connect(self.slider_released)
 
+        idxLine += 1
         onceLbl = QLabel("Unique:")
         self.onceCheckBox = QCheckBox()
         self.onceCheckBox.setCheckState(Qt.CheckState.Checked)
         self.onceCheckBox.stateChanged.connect(self.updateViewChanged)
-        #onceCheckBox.stateChanged.connect(self.show_state)
-        self.fields.addWidget(onceLbl,7,0,1,1)
-        self.fields.addWidget(self.onceCheckBox,7,1,1,1)
+        self.fields.addWidget(onceLbl,idxLine,0,1,1)
+        self.fields.addWidget(self.onceCheckBox,idxLine,1,1,1)
 
+        idxLine += 1
         shuffleLbl = QLabel("Aléatoire:")
         self.shuffleCheckBox = QCheckBox()
         self.shuffleCheckBox.setCheckState(Qt.CheckState.Unchecked)
         self.shuffleCheckBox.stateChanged.connect(self.updateViewChanged)
-        #shuffleCheckBox.stateChanged.connect(self.show_state)
-        self.fields.addWidget(shuffleLbl,8,0,1,1)
-        self.fields.addWidget(self.shuffleCheckBox,8,1,1,1)
+        self.fields.addWidget(shuffleLbl,idxLine,0,1,1)
+        self.fields.addWidget(self.shuffleCheckBox,idxLine,1,1,1)
 
+        idxLine += 1
         loopLbl = QLabel("Boucle:")
         self.loopCheckBox = QCheckBox()
         self.loopCheckBox.setCheckState(Qt.CheckState.Unchecked)
         self.loopCheckBox.stateChanged.connect(self.updateViewChanged)
-        #loopCheckBox.stateChanged.connect(self.show_state)
-        self.fields.addWidget(loopLbl,9,0,1,1)
-        self.fields.addWidget(self.loopCheckBox,9,1,1,1)
+        self.fields.addWidget(loopLbl,idxLine,0,1,1)
+        self.fields.addWidget(self.loopCheckBox,idxLine,1,1,1)
       
+        idxLine += 1
         datasLbl = QLabel("Données")
         self.datas = QTextEdit("")
-        self.fields.addWidget(datasLbl,10,0,1,1)
-        self.fields.addWidget(self.datas,10,1,1,1)
-        self.fields.setRowMinimumHeight(10, 160)
+        self.fields.addWidget(datasLbl,idxLine,0,1,1)
+        self.fields.addWidget(self.datas,idxLine,1,1,1)
 
+
+        idxLine += 1
         consoleLbl = QLabel("Log")
         self.console = QTextEdit("")
-        self.fields.addWidget(consoleLbl,11,0,1,1)
-        self.fields.addWidget(self.console,11,1,1,1)
+        self.fields.addWidget(consoleLbl,idxLine,0,1,1)
+        self.fields.addWidget(self.console,idxLine,1,1,1)
 
+        idxLine += 1
         self.writeBtn = QPushButton("Encode")
         self.writeBtn.clicked.connect(self.writeCard)
-        self.fields.addWidget(self.writeBtn,12,0,1,1)
+        self.fields.addWidget(self.writeBtn,idxLine,0,1,1)
 
         self.setLayout(self.fields)
 
@@ -197,6 +215,7 @@ class GroupClass(QGroupBox):
                 "loop": self.loopCheckBox.isChecked(),
                 "keep": self.keepSlider.value(),
                 "limit": self.limitSlider.value(),
+                "say": self.sayEdit.text(),
                 "url": self.urlEdit.text()
             }
             
@@ -352,6 +371,9 @@ class GroupClass(QGroupBox):
             if "keep" in payload_object:
                 self.keepSlider.setValue(int(payload_object["keep"]))
 
+            if "say" in payload_object:
+                self.sayEdit.setText(payload_object["say"])
+               
             if "url" in payload_object:
                 self.urlEdit.setText(payload_object["url"])
 
@@ -449,6 +471,7 @@ class GroupClass(QGroupBox):
             "loop": self.loopCheckBox.isChecked(),
             "keep": self.keepSlider.value(),
             "limit": self.limitSlider.value(),
+            "say": self.sayEdit.text(),
             "url": self.urlEdit.text()
         }
 
