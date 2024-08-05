@@ -25,6 +25,7 @@ class rfid():
     self.cardPresence = 0
     self.changeCallback = None
     self.insertCallback = None
+    self.errorCallback = None
     self.removeCallback = None
     self.presenceCallback = None    
     self.sectors = []
@@ -46,6 +47,9 @@ class rfid():
 
     if 'insert_callback' in params:
       self.insertCallback = params['insert_callback']
+
+    if 'error_callback' in params:
+      self.errorCallback = params['error_callback']
 
     if 'change_callback' in params:
       self.changeCallback = params['change_callback']
@@ -92,7 +96,7 @@ class rfid():
 
     try:
       id, text = self.readSectors(self.sectors)
-
+      #None
       jsonDatas = json.loads(text.strip('\x00'))
 
       if self.trigger:
@@ -105,6 +109,10 @@ class rfid():
       self.lastJsonDatas = jsonDatas
     
     except:
+
+      if self.trigger:
+        self.triggerError(str(id), 'error')
+
       print("Unexpected error:", sys.exc_info()[0])
       pass
     
@@ -139,6 +147,10 @@ class rfid():
   def triggerInsert(self, id, jsonDatas):
     if not self.insertCallback is None:
       self.insertCallback(id, jsonDatas)
+
+  def triggerError(self, id, jsonDatas):
+    if not self.errorCallback is None:
+      self.errorCallback(id, jsonDatas)
 
   def triggerRemove(self, id, jsonDatas):
     if not self.removeCallback is None:

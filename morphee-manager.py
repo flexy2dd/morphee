@@ -867,12 +867,21 @@ def rfidPresence(status):
   if args.verbose:
     print('RFID card is ' + status)
 
+def rfidError(id, status):
+  if args.verbose:
+    print('RFID card is ' + status)
+
+  oLights.progress(100, "RED")
+  time.sleep(2)
+  oLights.progress(0, "RED")
+    
 oScreen.println("Init lecteur RFID")
 oRfid = rfid.rfid(
   remove_callback=rfidRemove,
   insert_callback=rfidInsert,
   change_callback=rfidChange,
   presence_callback=rfidPresence,
+  error_callback=rfidError,
   sectors=constant.SECTORS
 )
 
