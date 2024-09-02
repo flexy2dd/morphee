@@ -515,9 +515,9 @@ def on_message(client, userdata, msg):
     oScreen.clock(True);
     oCore.setMode(constant.STATE_MODE_REGULAR)
 
-  elif msg.topic == constant.MQTT_TOPIC_MOPIDY_VOL:
-    payload = msg.payload.decode('utf-8')
-    mopidyCurrentTrack['volume'] = int(payload)
+  #elif msg.topic == constant.MQTT_TOPIC_MOPIDY_VOL:
+  #  payload = msg.payload.decode('utf-8')
+  #  mopidyCurrentTrack['volume'] = int(payload)
 
 # connect to mqtt server
 oScreen.println("Connect to MQTT on " + constant.MQTT_HOST + ':' + str(constant.MQTT_PORT))
