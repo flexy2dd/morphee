@@ -15,7 +15,7 @@
 # remember to uncomment fsck autorepair here: nano /etc/default/rcS
 
 # Let's clear the screen
-clear
+#clear
 
 # Write here the gateway you want to check to declare network working or not
 gateway_ip='www.google.com'
