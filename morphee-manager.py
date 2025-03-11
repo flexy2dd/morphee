@@ -574,6 +574,7 @@ def mopidyStatusChange(newStatus, oldStatus):
 
     mopidyCurrentTrack = oMopidy.getCurrentTrack()
     volume = oCore.getSpecificVolume(mopidyCurrentTrack['id'])
+    logging.info("Mopidy now playing set volume " + str(volume))
     oMopidy.volume_set(volume)
 
     oCore.setMode(constant.STATE_MODE_PLAY)

@@ -327,7 +327,7 @@ class mopidy():
 
     r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.mixer.set_volume", "params": {"volume": volume}})
     time.sleep(0.1)
-    logging.debug('MOPIDY volume_set ' + str(volume) + ' > ' + r.text)
+    logging.info('MOPIDY volume_set ' + str(volume) + ' > ' + r.text)
 
   def create_playlist(self, uri, isOnce = True, isShuffle = False, isLoop = False, keep = 1):
     isPlaylist = uri.find('playlist') != -1
@@ -339,6 +339,8 @@ class mopidy():
     #Clear existing tracklist
     self.tracklist_clear()
 
+    uris = []
+      
     isTrack = re.search("^file:(.*)(\.mp3)$", uri, re.IGNORECASE)
     if isTrack:
       uris = [uri]
@@ -351,6 +353,10 @@ class mopidy():
           isMp3 = re.search("(\.mp3)$", track['uri'], re.IGNORECASE)
           if isMp3:
             uris.append(track['uri'])
+
+    if len(uris)<=0:
+      logging.info('MOPIDY uris is empty')
+      return False
 
     r = requests.post(constant.MOPIDY_URL, json={"method": "core.tracklist.add", "jsonrpc": "2.0", "params": {"uris": uris}, "id": 1})
     time.sleep(0.1)

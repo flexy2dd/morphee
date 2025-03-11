@@ -158,6 +158,8 @@ class core():
       volume = 0
     elif volume > 100:
       volume = 100
+      
+    self.setGeneralVolume(volume)
 
     if os.path.isfile(self.confFile):
       oConf = configparser.ConfigParser()
@@ -178,6 +180,7 @@ class core():
   def getSpecificVolume(self, idTrack):
     oConf = self.getConf()
     defaultVolume = self.getGeneralVolume()
+    return int(defaultVolume)
     return int(oConf.get('track-' + idTrack, 'volume', fallback=defaultVolume))
 
   def setSpeakVolume(self, volume):
