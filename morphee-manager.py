@@ -878,6 +878,8 @@ def rfidError(id, status):
     
 oScreen.println("Init lecteur RFID")
 oRfid = rfid.rfid(
+  core = oCore,
+  logging = logging,
   remove_callback=rfidRemove,
   insert_callback=rfidInsert,
   change_callback=rfidChange,

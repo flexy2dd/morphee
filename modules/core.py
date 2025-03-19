@@ -125,6 +125,10 @@ class core():
     oConf = self.getConf()
     return int(oConf.get('general', 'light', fallback=constant.LIGHT_ON))
 
+  def getCardsPath(self):
+    oConf = self.getConf()
+    return oConf.get('general', 'cardsPath', fallback='./')
+
   def getVolumeStep(self):
     oConf = self.getConf()
     return int(oConf.get('general', 'volume_step', fallback='4'))

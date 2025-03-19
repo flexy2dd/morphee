@@ -308,7 +308,8 @@ class MFRC522:
         i = 2000
         #i = 4
         while True:
-            time.sleep(0.35)
+            #time.sleep(0.35)
+            time.sleep(0.05)
             n = self.ReadReg(self.CommIrqReg)
             i -= 1
             # Break if interrupt request received or timeout
@@ -531,14 +532,18 @@ class MFRC522:
 
         # Now we start the authentication itself
         (status, backData, backLen) = self.MFRC522_ToCard(self.PCD_AUTHENT, buff)
-        
+
+        self.logger.error("Authenticate status " + str(status))
+
         # Check if an error occurred
         if not (status == self.MI_OK):
-            self.logger.error("AUTH ERROR!!")
+            self.logger.error("AUTH ERROR!!" + str(status))
         if not (self.ReadReg(self.Status2Reg) & 0x08) != 0:
             self.logger.error("AUTH ERROR(status2reg & 0x08) != 0")
 
         # Return the status
+        self.logger.error("Authenticate status result " + str(status))
+
         return status
 
     def StopCrypto1(self):

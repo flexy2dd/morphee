@@ -2,6 +2,7 @@
 
 import RPi.GPIO as GPIO
 import board
+from modules import constant
 from modules.mfrc522.MFRC522 import MFRC522
 from modules.mfrc522.SimpleMFRC522 import SimpleMFRC522
 from modules.mfrc522.BasicMFRC522 import BasicMFRC522
@@ -21,10 +22,19 @@ print('gpioMode BOARD ' + str(GPIO.BOARD))
 print('gpioMode BCM ' + str(GPIO.BCM))
 
 try:
-        id= reader.read_id()
-        print(id)
+
+    id = reader.read_id()
+    print(id)
+
+#    text_all = ''
+#    for trailer_block in constant.SECTORS:
+#      id, text = reader.read_no_block_noauth(trailer_block)
+#      text_all += text
+
+#      id= reader.read_id()
+#      print(id)
 finally:
-        GPIO.cleanup()
+    GPIO.cleanup()
 
 #from time import sleep
 #import mfrc522

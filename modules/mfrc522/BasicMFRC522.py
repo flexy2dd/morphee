@@ -50,6 +50,18 @@ class BasicMFRC522:
             text_all += text
         return id, text_all
 
+    def read_uid(self):
+        """
+        Read the tag ID from the RFID tag.
+
+        Returns:
+            int: The tag ID as an integer.
+        """
+        uid = self.read_uid_no_block()
+        while not uid:
+            uid = self.read_uid_no_block()
+        return uid
+
     def read_id(self):
         """
         Read the tag ID from the RFID tag.
@@ -81,6 +93,26 @@ class BasicMFRC522:
 
         # Convert UID to integer and return as the tag ID
         return self._uid_to_num(uid)
+
+    def read_uid_no_block(self):
+        """
+        Attempt to read the tag ID from the RFID tag.
+
+        Returns:
+            int: The tag ID as an integer, or None if the operation fails.
+        """
+        # Send request to RFID tag
+        (status, TagType) = self.MFRC522.Request(self.MFRC522.PICC_REQIDL)
+        if status != self.MFRC522.MI_OK:
+            return None
+
+        # Anticollision, return UID if successful
+        (status, uid) = self.MFRC522.Anticoll()
+        if status != self.MFRC522.MI_OK:
+            return None
+
+        # Convert UID to integer and return as the tag ID
+        return uid
 
     def read_no_block(self, trailer_block):
         """
@@ -117,6 +149,7 @@ class BasicMFRC522:
 
         # Authenticate with the tag using the provided key
         status = self.MFRC522.Authenticate(self.MFRC522.PICC_AUTHENT1A, trailer_block, self.KEY, uid)
+        status = self.MFRC522.MI_OK
 
         # Initialize variables for storing data and text read from the tag
         data = []
@@ -146,7 +179,38 @@ class BasicMFRC522:
 
             # Return None, None if an exception occurs
             return None, None
-        
+
+    def read_no_block_noauth(self, trailer_block):
+        try:
+            while True:
+                # Scan for tags
+                (status, TagType) = self.MFRC522.Request(self.MFRC522.PICC_REQIDL)
+    
+                # If a tag is found
+                if status == self.MFRC522.MI_OK:
+                    print("Tag detected")
+    
+                    # Get the UID of the tag
+                    (status, uid) = self.MFRC522.Anticoll()
+    
+                    # If the UID is successfully obtained
+                    if status == self.MFRC522.MI_OK:
+                        print("UID: " + ":".join([str(x) for x in uid]))
+    
+                        # Select the tag
+                        self.MFRC522.SelectTag(uid)
+    
+                        # Read data from the tag
+                        data = [elem for index in [6] for elem in self.MFRC522.ReadTag(index)]
+                        result = ''.join([chr(charcode) for charcode in data])
+                        print("Data read:", result)
+                    else:
+                        print("Error obtaining UID")
+    
+        except KeyboardInterrupt:
+            print("Exiting...")
+            self.MFRC522.StopCrypto1()
+    
     def write_sector(self, text, trailer_block):
         """
         Write data to a sector of the RFID tag.
@@ -374,7 +438,7 @@ class BasicMFRC522:
             int: The UID as an integer.
         """
         n = 0
-        for i in range(0, 5):
+        for i in range(0, 4):
             n = n * 256 + uid[i]
         return n
 

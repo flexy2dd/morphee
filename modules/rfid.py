@@ -1,10 +1,12 @@
 import RPi.GPIO as GPIO
+import os
 import time
 import datetime
 import math
 import sys
 import threading
 import json
+import logging
 from pprint import pprint
 from modules import constant
 from modules.mfrc522.MFRC522 import MFRC522
@@ -32,6 +34,19 @@ class rfid():
     self.verbose = False
     self.trigger = True
     self.checkPresence = True
+    self.logging = None
+    self.core = None
+
+    if 'core' in params:
+      self.core = params['core']
+
+    if 'logging' in params:
+      self.logging = params['logging']
+    else:
+      if self.core != None:
+        logging_level: int = constant.DEBUG_LEVELS['DEBUG']
+      else:
+        logging_level: int = self.core.getDebugLevelFromText(self.core.readConf("level", "logging", 'INFO'))
 
     # Presence card
     GPIO.setup(constant.GPIO_RFID_DETECT, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -63,10 +78,16 @@ class rfid():
   def cardPresenceCall(self, channel):
     if self.checkPresence:
         state = GPIO.input(constant.GPIO_RFID_DETECT)
+        
+        logging.info("RFID card check presence with state " + str(state))
+             
         if state == 0:
             if self.cardPresence == 1:
               self.cardPresence = 0
               time.sleep(1)
+              
+              logging.info("RFID card removed")
+
               if not self.presenceCallback is None:
                 self.presenceCallback('remove')
               self.triggerCardRemoved()
@@ -77,6 +98,9 @@ class rfid():
               self.cardPresence = 1
               
               time.sleep(1)
+              
+              logging.info("RFID card inserted")
+
               if not self.presenceCallback is None:
                 self.presenceCallback('insert')
               self.triggerCardInserted()
@@ -84,6 +108,8 @@ class rfid():
               pass
 
   def triggerCardRemoved(self):
+    logging.debug("RFID trigger card removed")
+
     if self.verbose:
       print('triggerCardRemoved')
 
@@ -91,23 +117,42 @@ class rfid():
       self.triggerRemove(str(self.lastId), self.lastJsonDatas)
 
   def triggerCardInserted(self):
+    logging.debug("RFID trigger card inserted")    
+
     if self.verbose:
       print('triggerCardInserted')
 
     try:
-      id, text = self.readSectors(self.sectors)
-      #None
-      jsonDatas = json.loads(text.strip('\x00'))
+      uid = self.reader.read_uid()
+      id = self.reader.read_id()
+      
+      logging.info('RFID read ID ' + str(id))
+      
+      cardsPath = self.core.getCardsPath()
+      
+      jsonFile = cardsPath + '/' + str(id) + '.json'
 
+      logging.info('RFID read card json file ' + jsonFile)
+
+      if os.path.isfile(jsonFile):
+
+        with open(jsonFile, 'r') as file:
+            jsonDatas = json.load(file)
+
+        logging.info('RFID read card json file loaded')
+
+        if self.trigger:
+          self.triggerInsert(str(id), jsonDatas)
+
+        if self.lastId != id and self.trigger:
+          self.triggerChange(str(id), jsonDatas, str(self.lastId), self.lastJsonDatas)
+    
+        self.lastId = id
+        self.lastJsonDatas = jsonDatas
+    
       if self.trigger:
-        self.triggerInsert(str(id), jsonDatas)
+        self.triggerError(str(id), 'no cards files file ' + str(id) + "(" + str(uid) + ")")
 
-      if self.lastId != id and self.trigger:
-        self.triggerChange(str(id), jsonDatas, str(self.lastId), self.lastJsonDatas)
-    
-      self.lastId = id
-      self.lastJsonDatas = jsonDatas
-    
     except:
 
       if self.trigger:
@@ -141,7 +186,6 @@ class rfid():
 
   def triggerChange(self, id, jsonDatas, idOld, jsonDatasOld):
     if not self.changeCallback is None:
-      pprint('call changeCallback')
       self.changeCallback(id, jsonDatas, idOld, jsonDatasOld)
 
   def triggerInsert(self, id, jsonDatas):
@@ -202,8 +246,13 @@ class rfid():
 
   def readSector(self, trailer_block):
     id, text = self.reader.read_no_block(trailer_block)
+
+    logging.info('RFID read sector result ' + text + ', ' + str(trailer_block))
+
     while not id:
       id, text = self.reader.read_no_block(trailer_block)
+      logging.info('RFID read sector result ' + text + ', ' + str(trailer_block))
+
     return id, text
 
   def readSectors(self, trailer_blocks):
