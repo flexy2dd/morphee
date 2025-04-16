@@ -156,7 +156,7 @@ class core():
     oConf = self.getConf()
     return int(oConf.get('general', 'volume', fallback='10'))
 
-  def setSpecificVolume(self, idTrack, volume):
+  def setSpecificVolume(self, idCard, volume):
     
     if volume < 0:
       volume = 0
@@ -169,10 +169,10 @@ class core():
       oConf = configparser.ConfigParser()
       oConf.read(self.confFile)
 
-      if not oConf.has_section('track-' + idTrack):
-        oConf.add_section('track-' + idTrack)
+      if not oConf.has_section('card-' + idCard):
+        oConf.add_section('card-' + idCard)
 
-      oConf.set('track-' + idTrack, 'volume', str(volume))
+      oConf.set('card-' + idCard, 'volume', str(volume))
     
       with open(self.confFile, 'w') as configfile:
         oConf.write(configfile)
@@ -181,11 +181,11 @@ class core():
 
     return False;
 
-  def getSpecificVolume(self, idTrack):
+  def getSpecificVolume(self, idCard):
     oConf = self.getConf()
     defaultVolume = self.getGeneralVolume()
-    return int(defaultVolume)
-    return int(oConf.get('track-' + idTrack, 'volume', fallback=defaultVolume))
+    #return int(defaultVolume)
+    return int(oConf.get('card-' + idCard, 'volume', fallback=defaultVolume))
 
   def setSpeakVolume(self, volume):
     if os.path.isfile(self.confFile):

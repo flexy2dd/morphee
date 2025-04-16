@@ -329,6 +329,21 @@ class mopidy():
     time.sleep(0.1)
     logging.info('MOPIDY volume_set ' + str(volume) + ' > ' + r.text)
 
+  def volume_get(self):
+    volume = int(0)
+    try:
+      jsonDatas = r.json()['result']
+
+      if not tools.isEmpty(jsonDatas):
+        volume = int(jsonDatas)
+
+    except:
+      logging.error("MOPIDY get_volume unexpected error:", sys.exc_info()[0])
+      raise
+
+    time.sleep(0.1)
+    logging.info('MOPIDY volume_get ' + str(volume))
+
   def create_playlist(self, uri, isOnce = True, isShuffle = False, isLoop = False, keep = 1):
     isPlaylist = uri.find('playlist') != -1
     isAlbum = uri.find('album') != -1
@@ -448,7 +463,7 @@ class mopidy():
               result['artist'] = jsonDatas['artists'][0]['name']
 
       except:
-        logging.error("get_playing_details unexpected error:", sys.exc_info()[0])
+        logging.error("get_playing_details get_current_track unexpected error:", sys.exc_info()[0])
         raise
 
     r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.playback.get_time_position"})
@@ -461,7 +476,19 @@ class mopidy():
 
       except:
 
-        logging.error("get_playing_details unexpected error:", sys.exc_info()[0])
+        logging.error("get_playing_details get_time_position unexpected error:", sys.exc_info()[0])
+        raise
+
+    r = requests.post(constant.MOPIDY_URL, json={"jsonrpc": "2.0", "id": 1, "method": "core.mixer.get_volume"})
+    if r.status_code==200:
+      try:
+        jsonDatas = r.json()['result']
+
+        if not tools.isEmpty(jsonDatas):
+          result['volume'] = jsonDatas
+
+      except:
+        logging.error("get_playing_details get_volume unexpected error:", sys.exc_info()[0])
         raise
 
     logging.debug('MOPIDY get_playing_details > ' + r.text)

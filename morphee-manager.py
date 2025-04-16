@@ -135,7 +135,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
     logging.critical("Failed to connect, return code %d\n", reason_code)
 
 def on_message(client, userdata, msg):
-  global mopidyCurrentTrack
+  global mopidyCurrentTrack, coreCurrentCard
 
   if args.verbose:
     print(f"MQTT onMessage received `{msg.payload.decode()}` from `{msg.topic}` topic")
@@ -148,7 +148,7 @@ def on_message(client, userdata, msg):
       print("Set mode to read")
 
     logging.info('Set mode to read')
-    
+
     oRfid.setTriggerOff()
 
     oCore.setMode(constant.STATE_MODE_READ)
@@ -539,7 +539,8 @@ oMqttClient.loop_start()
 # Lights
 # ===========================================================================
 oLights = lights.lights(oCore)
-oLights.chase(10, "WHITE", 10, 3, 6)
+#oLights.chase(10, "WHITE", 10, 3, 6)
+#oLights.sparkle(10, "BLUE", 0.5, 10)
 
 # ===========================================================================
 # Mopidy
@@ -547,12 +548,12 @@ oLights.chase(10, "WHITE", 10, 3, 6)
 oScreen.println("Init mopidy")
 
 def mopidyUpdateDetails(currentTrack):
-  global mopidyCurrentTrack
+  global mopidyCurrentTrack, coreCurrentCard
 
   if args.verbose:
     print("Mopidy update details " + str(currentTrack['name']))
 
-  logging.info("Mopidy update details " + str(currentTrack['name']))
+  logging.info("Mopidy update details " + json.dumps(currentTrack))
 
   if oCore.getMode() == constant.STATE_MODE_PLAY:
     mopidyCurrentTrack = currentTrack
@@ -573,9 +574,9 @@ def mopidyStatusChange(newStatus, oldStatus):
   if newStatus=='playing':
 
     mopidyCurrentTrack = oMopidy.getCurrentTrack()
-    volume = oCore.getSpecificVolume(mopidyCurrentTrack['id'])
-    logging.info("Mopidy now playing set volume " + str(volume))
-    oMopidy.volume_set(volume)
+    #volume = oCore.getSpecificVolume(mopidyCurrentTrack['id'])
+    #logging.info("Mopidy now playing set volume " + str(volume))
+    #oMopidy.volume_set(volume)
 
     oCore.setMode(constant.STATE_MODE_PLAY)
     #oScreen.play(currentTrack, True)
@@ -621,6 +622,7 @@ oSpeak.logging = logging
 # ===========================================================================
 # Rfid
 # ===========================================================================
+coreCurrentCard = None
 def rfidChange(id, jsonDatas, idOld, jsonDatasOld):
   if args.verbose:
     print('change to ' + id + ' : ' + json.dumps(jsonDatas))
@@ -669,7 +671,7 @@ def rfidRemove(id, jsonDatas):
     oScreen.clock(True)
 
 def rfidInsert(id, jsonDatas):
-  global mopidyCurrentTrack
+  global mopidyCurrentTrack, coreCurrentCard
 
   if args.verbose:
     print('Insert to ' + id + ' : ' + json.dumps(jsonDatas))
@@ -802,13 +804,20 @@ def rfidInsert(id, jsonDatas):
         oScreen.wait(True, 'Lancement de la lecture')
         time.sleep(0.5)
 
-        h = hashlib.new('sha1')
-        h.update(sUrl.encode())
-        jsonDatas['id'] = h.hexdigest()
+#        h = hashlib.new('sha1')
+#        h.update(sUrl.encode())
+#        jsonDatas['id'] = h.hexdigest()
+
+        if args.verbose:
+          print(jsonDatas)
 
         volume = oCore.getSpecificVolume(jsonDatas['id'])
+        if args.verbose:
+          print('volume ' + str(volume))
+
         oMopidy.volume_set(volume)
 
+        coreCurrentCard = jsonDatas
         mopidyCurrentTrack = {**mopidyCurrentTrack, **jsonDatas}
         
         oLights.progress(10, "BLUE")
@@ -896,7 +905,7 @@ swithRelease = 0
 rotateDirection = 'none'
 
 def rotaryRotateCall(direction):
-  global rotateDirection, mopidyCurrentTrack
+  global rotateDirection, mopidyCurrentTrack, coreCurrentCard
   if args.verbose:
     print('Rotate to ' + direction)
   rotateDirection = direction
@@ -904,22 +913,22 @@ def rotaryRotateCall(direction):
   if oCore.getMode()==constant.STATE_MODE_PLAY:
     if rotateDirection=='left':
       volumeStep = oCore.getVolumeStep()
-      volume = oCore.getSpecificVolume(mopidyCurrentTrack['id']) + volumeStep
-      oCore.setSpecificVolume(mopidyCurrentTrack['id'], volume)
+      volume = oCore.getSpecificVolume(coreCurrentCard['id']) + volumeStep
+      oCore.setSpecificVolume(coreCurrentCard['id'], volume)
       oMopidy.volume_set(volume)
       mopidyCurrentTrack['volume'] = int(volume)
       oScreen.play(mopidyCurrentTrack, True)
       if args.verbose:
-        print('Set specific volume ' + str(volume) + ' for ' + str(mopidyCurrentTrack['id']))
+        print('Set specific volume ' + str(volume) + ' for ' + str(coreCurrentCard['id']))
     else:
       volumeStep = oCore.getVolumeStep()
-      volume = oCore.getSpecificVolume(mopidyCurrentTrack['id']) - volumeStep
-      oCore.setSpecificVolume(mopidyCurrentTrack['id'], volume)
+      volume = oCore.getSpecificVolume(coreCurrentCard['id']) - volumeStep
+      oCore.setSpecificVolume(coreCurrentCard['id'], volume)
       oMopidy.volume_set(volume)
       mopidyCurrentTrack['volume'] = int(volume)
       oScreen.play(mopidyCurrentTrack, True)
       if args.verbose:
-        print('Set specific volume ' + str(volume) + ' for ' + str(mopidyCurrentTrack['id']))
+        print('Set specific volume ' + str(volume) + ' for ' + str(coreCurrentCard['id']))
 
 def rotarySwitchCall(switchStatus):
   global swithRelease

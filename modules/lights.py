@@ -71,6 +71,25 @@ class lights():
     )
     time.sleep(0.2)
 
+  def sparkle(self, runtime = 5, color = "BLUE", speed = 0.05, brightness = 10):
+    publish.single(
+      constant.MQTT_TOPIC_ANIMATION_START,
+      json.dumps({
+        "name": "sparkle",
+        "brightness": brightness,
+        "time": runtime,
+        "parameters": {
+          "color": color,
+          "speed": speed,
+          "num_sparkles": 10
+        }
+      }),
+      hostname=str(constant.MQTT_HOST),
+      port=int(constant.MQTT_PORT),
+      client_id=self.oCore.mqttClientId
+    )
+    time.sleep(0.2)
+                            
 #  def countdown(self, step, picto = "save", title = ""):
 #    self.draw.rectangle(self.device.bounding_box, outline="black", fill="black")
 #
